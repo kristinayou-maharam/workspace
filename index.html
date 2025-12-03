@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Canvas Board</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <style>
+      body {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      #canvas {
+        position: relative !important;
+        min-height: 100vh;
+        height: auto !important;
+      }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: -500;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 300;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        width: 50vw;
+        max-width: none;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .modal-title {
+        font-size: 24px;
+        font-family: "MaharamNeue-Medium", sans-serif;
+      }
+ #addproduct-search{
+  display: block;
+ }
+
+ #addSearch{
+  width: 200px;
+  height: 30px;
+  border: none;
+  border-bottom: 1px solid grey;
+ }
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px 10px;
+        color: #666;
+      }
+      .modal-close:hover {
+        color: #000;
+      }
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+      }
+      .project-card {
+        cursor: pointer;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        transition: all 0.2s;
+        background: white;
+      }
+      .project-card:hover {
+        border-color: #007aff;
+        background: #f9f9f9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .project-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .project-card-icon {
+        font-size: 24px;
+      }
+      .project-card-title {
+        font-size: 16px;
+        font-family: "MaharamNeue-Medium", sans-serif;
+        font-weight: 600;
+        flex: 1;
+      }
+      .project-card-count {
+        font-size: 12px;
+        color: #999;
+        background: #f0f0f0;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      .project-card-preview {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .project-preview-item {
+        aspect-ratio: 1;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .project-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .project-preview-more {
+        font-size: 20px;
+        color: #999;
+        font-family: "MaharamNeue-Medium", sans-serif;
+      }
+      .product-card {
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        transition: all 0.2s;
+      }
+      .product-card:hover {
+        border-color: #007aff;
+        background: #f5f5f5;
+      }
+      .product-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+      .product-card-title {
+        font-size: 14px;
+        font-family: "MaharamNeue-Medium", sans-serif;
+        margin-bottom: 4px;
+      }
+      .product-card-info {
+        font-size: 12px;
+        color: #666;
+      }
+      .modal-filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .filter-label {
+        font-size: 12px;
+        font-family: "MaharamNeue-Medium", sans-serif;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        font-family: "MaharamNeue-Regular", sans-serif;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        min-width: 150px;
+      }
+      .filter-select:focus {
+        outline: none;
+        border-color: #007aff;
+      }
+      .modal-search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .search-input {
+        flex: 2;
+        padding: 10px 15px;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        font-family: "MaharamNeue-Regular", sans-serif;
+        font-size: 14px;
+      }
+      .search-input:focus {
+        outline: none;
+        border-color: #007aff;
+      }
+      .sort-dropdown {
+        position: fixed;
+        top: 80px;
+        left: 62%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        z-index: 250;
+        display: none;
+      }
+      .sort-dropdown.active {
+        display: block;
+      }
+      .sort-option {
+        padding: 10px 16px;
+        cursor: pointer;
+        border-radius: 6px;
+        font-family: "MaharamNeue-Regular", sans-serif;
+        font-size: 14px;
+        transition: background 0.2s;
+        white-space: nowrap;
+      }
+      .sort-option:hover {
+        background: #f5f5f5;
+      }
+    </style>
+</head>
+<body>
+  <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+  
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">Workspace</div>
+    <div class="sidebar-content">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title active"  style="cursor: pointer;">
+          <span id="projectsSectionIcon">📂</span> Projects
+        </div>
+        <div id="projectsSectionContent" style="display: block;">
+          <div id="projectsList"></div>
+          <div class="sidebar-item" onclick="createNewProject()" style="background: #f5f5f5; margin-top: 8px;">➕ New Project</div>
+        </div>
+      </div>
+      
+      <div class="sidebar-section">
+        <div class="sidebar-section-title" onclick="toggleFavoritesSection()" style="cursor: pointer;">
+          <span id="favoritesSectionIcon">📂</span> Favorites
+        </div>
+        <div id="favoritesSectionContent" style="display: block;">
+          <div id="favoritesList"></div>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <a href="compare.html"><div class="sidebar-section-title">Compare</div></a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Palettes</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Samples</div>
+      </div>
+      
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Color Search</div>
+        <input type="color" id="colorPicker" class="sidebar-item" style="width: 100%; height: 80px; border: none; border-radius: 4px; cursor: pointer;">
+      </div>
+      
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Actions</div>
+        <div class="sidebar-item" onclick="sortGrid()">🔄 Sort</div>
+        <div class="sidebar-item" onclick="cleanUpGrid()">📊 Clean Up Grid</div>
+        <div class="sidebar-item" onclick="clearCanvas()">🗑️ Clear Canvas</div>
+        <div class="sidebar-item" onclick="exportCanvas()">💾 Export View</div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  
+  <div class="toolbar">
+    <button class="tool-btn active" data-tool="select"><img src="./img/icons/SVG/Asset 1.svg" alt="Select" class="toolbar-icon"> Select</button>
+    <button class="tool-btn" data-tool="product"><img src="./img/icons/SVG/Asset 3.svg" alt="Select" class="toolbar-icon"> Add Product</button>
+    <button class="tool-btn" id="sortBtn" onclick="toggleSortDropdown()"><img src="./img/icons/SVG/Asset 5.svg" alt="Select" class="toolbar-icon"> Sort</button>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn" id="zoomIn" style="display: none;">+</button>
+    <button class="control-btn" id="zoomOut" style="display: none;">−</button>
+    <button class="control-btn" id="resetView" style="display: none;">⌂</button>
+    <button class="control-btn" id="deleteItem" title="Delete selected item">🗑️</button>
+  </div>
+
+  <div class="sort-dropdown" id="sortDropdown">
+    <div class="sort-option" onclick="sortProducts('newest')">Newest to Oldest</div>
+    <div class="sort-option" onclick="sortProducts('oldest')">Oldest to Newest</div>
+    <div class="sort-option" onclick="sortProducts('price-high')">Price: High to Low</div>
+    <div class="sort-option" onclick="sortProducts('price-low')">Price: Low to High</div>
+  </div>
+
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Select a Project</div>
+        <button class="modal-close" onclick="closeProductModal()">✕</button>
+      </div>
+      <div class="modal-search">
+        <input type="search" class="search-input" id="productSearch" placeholder="Search projects..." oninput="applyFilters()">
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Canvas state
+    let viewportX = 0;
+    let viewportY = 0;
+    let zoom = 1;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let currentTool = 'select';
+    let selectedItem = null;
+    let draggedItem = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let isResizing = false;
+    let resizeHandle = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let resizeStartWidth = 0;
+    let resizeStartHeight = 0;
+    let isDraggingToSidebar = false;
+    let draggedCanvasItem = null;
+
+    // Items on the canvas
+    const items = [];
+
+    // Product images available
+    const productImages = [
+      'img/details/KT_Beacon_901925-005_detail.jpg',
+      'img/details/KT_Cozy_Cord_466938-002_detail.jpg',
+      'img/details/KT_Delite_466730-018_detail.jpg',
+      'img/details/KT_Facet_466804-012_detail.jpg',
+      'img/details/KT_Infinite_466734-019_detail.jpg',
+      'img/details/KT_Ponder_901936-002_detail.jpg',
+      'img/details/KT_Vast_466945-009_detail.jpg',
+      'img/details/KT_Villa_901900-005_detail.jpg',
+      'img/details/KT_Wrap_Up_901937-003_detail.jpg',
+      'img/details/MHRM_Cadence_466667-019_detail.jpg',
+      'img/details/MHRM_Connect_466638-009_detail.jpg',
+      'img/details/Maharam_Metaphor_466553_010_detail.jpg',
+      'img/details/Maharam_Method_466579_021_detail.jpg',
+      'img/details/Maharam_Muse_466487_026_detail.jpg',
+      'img/details/Maharam_Transmit_901895_013_detail.jpg'
+    ];
+
+    // Create grid of product images
+    // Initialize projects with sample products
+    const projects = [
+      { id: 'default', name: 'My Project', expanded: true, items: [] },
+      { id: 'ideas', name: 'Ideas', expanded: false, items: [] }
+    ];
+
+    function initializeProjectGrid() {
+      const rect = canvas.getBoundingClientRect();
+      const gridColumns = 3;
+      const cardWidth = 280;
+      const cardHeight = 320;
+      const gap = 30;
+      
+      // First, create sample products and assign to projects
+      productImages.forEach((imagePath, index) => {
+        const fileName = imagePath.split('/').pop();
+        const parts = fileName.replace('_detail.jpg', '').split('_');
+        const brandCode = parts[0];
+        const productName = parts[1] || 'Product';
+        const colorCode = parts[2] || '';
+        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
+                     brandCode === 'MHRM' ? 'Maharam' : 
+                     'Maharam';
+        
+        const product = {
+          type: 'product',
+          imagePath: imagePath,
+          title: productName,
+          brand: brand,
+          color: colorCode,
+          productCategory: 'Upholstery',
+          content: 'Textile',
+          price: '$85.00 / yd',
+          flipped: false,
+          id: generateId(),
+          projectId: index < 8 ? 'default' : 'ideas'
+        };
+        
+        items.push(product);
+      });
+      
+      // Calculate grid dimensions for projects
+      const gridRows = Math.ceil(projects.length / gridColumns);
+      const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+      
+      // Center the grid
+      const startX = (rect.width - totalGridWidth) / 2;
+      const startY = (rect.height - totalGridHeight) / 2;
+      
+      // Create project thumbnail cards
+      projects.forEach((project, index) => {
+        const col = index % gridColumns;
+        const row = Math.floor(index / gridColumns);
+        
+        const projectItems = items.filter(item => item.projectId === project.id && item.type === 'product');
+        
+        items.push({
+          type: 'project-thumbnail',
+          x: startX + col * (cardWidth + gap),
+          y: startY + row * (cardHeight + gap),
+          width: cardWidth,
+          height: cardHeight,
+          projectId: project.id,
+          projectName: project.name,
+          productCount: projectItems.length,
+          previewItems: projectItems.slice(0, 4),
+          flipped: false,
+          id: generateId()
+        });
+      });
+    }
+    
+    initializeProjectGrid();
+
+    function generateId() {
+      return Date.now() + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Setup canvas
+    function setupCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      // Calculate required height based on content
+      const gridColumns = 3;
+      const cardHeight = 320;
+      const gap = 30;
+      const gridRows = Math.ceil(projects.length / gridColumns);
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+      const minHeight = Math.max(window.innerHeight, totalGridHeight + 200);
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = minHeight * dpr;
+      canvas.style.height = minHeight + 'px';
+      
+      ctx.scale(dpr, dpr);
+      
+      draw();
+    }
+
+    window.addEventListener('resize', setupCanvas);
+    setupCanvas();
+
+    // Drawing functions
+    function draw() {
+      const rect = canvas.getBoundingClientRect();
+      const canvasHeight = parseInt(canvas.style.height) || rect.height;
+      ctx.clearRect(0, 0, rect.width, canvasHeight);
+      
+      ctx.save();
+      ctx.translate(viewportX, viewportY);
+      ctx.scale(zoom, zoom);
+      
+      drawGrid();
+      drawItems();
+      
+      ctx.restore();
+    }
+
+    function drawGrid() {
+      const rect = canvas.getBoundingClientRect();
+      const gridSize = 40;
+      const dotSize = 1.5;
+      
+      // Calculate visible area in world coordinates
+      const startX = Math.floor((-viewportX / zoom) / gridSize) * gridSize;
+      const startY = Math.floor((-viewportY / zoom) / gridSize) * gridSize;
+      const endX = Math.ceil((rect.width - viewportX) / zoom / gridSize) * gridSize;
+      const endY = Math.ceil((rect.height - viewportY) / zoom / gridSize) * gridSize;
+      
+      // Draw dots
+      ctx.fillStyle = '#d0d0d0';
+      for (let x = startX; x <= endX; x += gridSize) {
+        for (let y = startY; y <= endY; y += gridSize) {
+          ctx.beginPath();
+          ctx.arc(x, y, dotSize / zoom, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      
+      // Draw major grid lines (every 5 grid units)
+      ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+      ctx.lineWidth = 1 / zoom;
+      
+      ctx.beginPath();
+      for (let x = startX; x <= endX; x += gridSize * 5) {
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+      }
+      for (let y = startY; y <= endY; y += gridSize * 5) {
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawItems() {
+      items.forEach(item => {
+        if (item.type === 'product') {
+          drawProduct(item);
+        } else if (item.type === 'project-thumbnail') {
+          drawProjectThumbnail(item);
+        } else if (item.type === 'text') {
+          drawText(item);
+        }
+        
+        // Highlight selected item
+        if (selectedItem === item) {
+          ctx.strokeStyle = '#007aff';
+          ctx.lineWidth = 3 / zoom;
+          ctx.strokeRect(item.x - 5, item.y - 5, item.width + 10, item.height + 10);
+          
+          // Resize disabled for favorites
+          /*
+          // Draw resize handles for products
+          if (item.type === 'product') {
+            drawResizeHandles(item);
+          }
+          */
+        }
+      });
+    }
+
+    function drawResizeHandles(item) {
+      const handleSize = 10 / zoom;
+      const handles = [
+        { x: item.x - 5, y: item.y - 5 },
+        { x: item.x + item.width - handleSize + 5, y: item.y - 5 },
+        { x: item.x - 5, y: item.y + item.height - handleSize + 5 },
+        { x: item.x + item.width - handleSize + 5, y: item.y + item.height - handleSize + 5 }
+      ];
+      
+      ctx.fillStyle = '#007aff';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 / zoom;
+      
+      handles.forEach(handle => {
+        ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
+        ctx.strokeRect(handle.x, handle.y, handleSize, handleSize);
+      });
+    }
+
+    function drawProduct(item) {
+      const cornerRadius = 2;
+      
+      // Shadow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 15 / zoom;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6 / zoom;
+      
+      // White background card
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // Border
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.lineWidth = 1 / zoom;
+      roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+      ctx.stroke();
+      
+      if (item.flipped) {
+        // Show text information on back of card
+        ctx.fillStyle = '#f8f8f8';
+        roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+        ctx.fill();
+        
+        ctx.textAlign = 'center';
+        
+        const centerX = item.x + item.width / 2;
+        let yOffset = item.y + 30;
+        const lineHeight = 20 / zoom;
+        
+        // Title
+        if (item.title) {
+          ctx.font = `${18 / zoom}px "MaharamNeue-Medium", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.title, centerX, yOffset);
+          yOffset += lineHeight + 5 / zoom;
+        }
+        
+        // Brand
+        if (item.brand) {
+          ctx.font = `${18 / zoom}px "MaharamNeue-Medium", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.brand, centerX, yOffset);
+          yOffset += lineHeight;
+        }
+        
+        // Color
+        if (item.color) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.color, centerX, yOffset);
+          yOffset += lineHeight + 10 / zoom;
+        }
+        
+        // Product Category
+        if (item.productCategory) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.productCategory, centerX, yOffset);
+          yOffset += lineHeight;
+        }
+        
+        // Content
+        if (item.content) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.content, centerX, yOffset);
+          yOffset += lineHeight + 10 / zoom;
+        }
+        
+        // Price
+        if (item.price) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.price, centerX, yOffset);
+        }
+        
+        ctx.textAlign = 'left';
+      } else {
+        // Show image on front of card
+        // Load and draw image
+        if (!item.imageElement) {
+          item.imageElement = new Image();
+          item.imageElement.src = item.imagePath;
+          item.imageElement.onload = () => draw();
+        }
+        
+        if (item.imageElement.complete) {
+          const padding = 5;
+          const imgWidth = item.width - padding * 2;
+          const imgHeight = item.height - padding * 2;
+          
+          ctx.save();
+          // Clip to rounded rect for image
+          ctx.beginPath();
+          roundRect(ctx, item.x + padding, item.y + padding, imgWidth, imgHeight, cornerRadius - 2);
+          ctx.clip();
+          ctx.drawImage(item.imageElement, item.x + padding, item.y + padding, imgWidth, imgHeight);
+          ctx.restore();
+        }
+        
+        // Product name and color at bottom
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.font = `${11 / zoom}px "MaharamNeue-Regular", sans-serif`;
+        ctx.textAlign = 'center';
+        const bottomText = `${item.title || 'Product'}${item.color ? ' - ' + item.color : ''}`;
+        ctx.fillText(bottomText, item.x + item.width / 2, item.y + item.height - 15);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function drawProjectThumbnail(item) {
+      const cornerRadius = 8;
+      
+      // Shadow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 15 / zoom;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6 / zoom;
+      
+      // White background card
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // Border
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 2 / zoom;
+      roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+      ctx.stroke();
+      
+      // Header section
+      const headerHeight = 50;
+      ctx.fillStyle = '#f9f9f9';
+      ctx.beginPath();
+      ctx.moveTo(item.x + cornerRadius, item.y);
+      ctx.lineTo(item.x + item.width - cornerRadius, item.y);
+      ctx.quadraticCurveTo(item.x + item.width, item.y, item.x + item.width, item.y + cornerRadius);
+      ctx.lineTo(item.x + item.width, item.y + headerHeight);
+      ctx.lineTo(item.x, item.y + headerHeight);
+      ctx.lineTo(item.x, item.y + cornerRadius);
+      ctx.quadraticCurveTo(item.x, item.y, item.x + cornerRadius, item.y);
+      ctx.fill();
+      
+      // Header border
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 1 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(item.x, item.y + headerHeight);
+      ctx.lineTo(item.x + item.width, item.y + headerHeight);
+      ctx.stroke();
+      
+      // Folder icon
+      ctx.font = `${24 / zoom}px Arial`;
+      ctx.fillText('📂', item.x + 15, item.y + 32);
+      
+      // Project title
+      ctx.font = `${16 / zoom}px "MaharamNeue-Medium", sans-serif`;
+      ctx.fillStyle = '#333';
+      ctx.fillText(item.projectName, item.x + 50, item.y + 32);
+      
+      // Item count badge
+      const badgeText = `${item.productCount}`;
+      const badgeWidth = 30;
+      const badgeX = item.x + item.width - badgeWidth - 15;
+      ctx.fillStyle = '#f0f0f0';
+      ctx.beginPath();
+      ctx.arc(badgeX + badgeWidth/2, item.y + 25, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = `${12 / zoom}px "MaharamNeue-Regular", sans-serif`;
+      ctx.fillStyle = '#999';
+      ctx.textAlign = 'center';
+      ctx.fillText(badgeText, badgeX + badgeWidth/2, item.y + 29);
+      ctx.textAlign = 'left';
+      
+      // Product preview grid (2x2)
+      if (item.previewItems && item.previewItems.length > 0) {
+        const previewPadding = 15;
+        const previewY = item.y + headerHeight + previewPadding;
+        const previewWidth = (item.width - previewPadding * 3) / 2;
+        const previewHeight = (item.height - headerHeight - previewPadding * 3) / 2;
+        
+        item.previewItems.forEach((previewItem, index) => {
+          if (index < 4) {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            const px = item.x + previewPadding + col * (previewWidth + previewPadding);
+            const py = previewY + row * (previewHeight + previewPadding);
+            
+            // Load and draw preview image
+            if (!previewItem.previewImageElement) {
+              previewItem.previewImageElement = new Image();
+              previewItem.previewImageElement.src = previewItem.imagePath;
+              previewItem.previewImageElement.onload = () => draw();
+            }
+            
+            if (previewItem.previewImageElement.complete) {
+              ctx.save();
+              ctx.beginPath();
+              roundRect(ctx, px, py, previewWidth, previewHeight, 4);
+              ctx.clip();
+              ctx.drawImage(previewItem.previewImageElement, px, py, previewWidth, previewHeight);
+              ctx.restore();
+              
+              // Border around preview
+              ctx.strokeStyle = '#e0e0e0';
+              ctx.lineWidth = 1 / zoom;
+              roundRect(ctx, px, py, previewWidth, previewHeight, 4);
+              ctx.stroke();
+            }
+            
+            // Show +X for additional items
+            if (index === 3 && item.productCount > 4) {
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+              roundRect(ctx, px, py, previewWidth, previewHeight, 4);
+              ctx.fill();
+              
+              ctx.font = `${20 / zoom}px "MaharamNeue-Medium", sans-serif`;
+              ctx.fillStyle = 'white';
+              ctx.textAlign = 'center';
+              ctx.fillText(`+${item.productCount - 3}`, px + previewWidth/2, py + previewHeight/2 + 7);
+              ctx.textAlign = 'left';
+            }
+          }
+        });
+      }
+    }
+
+    function drawText(item) {
+      ctx.fillStyle = '#000';
+      ctx.font = `${18 / zoom}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      wrapText(ctx, item.text, item.x, item.y, item.width, 26 / zoom);
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      radius = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      let currentY = y;
+      
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = ctx.measureText(testLine);
+        
+        if (metrics.width > maxWidth && i > 0) {
+          ctx.fillText(line, x, currentY);
+          line = words[i] + ' ';
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, currentY);
+    }
+
+    // Coordinate conversion
+    function screenToWorld(screenX, screenY) {
+      return {
+        x: (screenX - viewportX) / zoom,
+        y: (screenY - viewportY) / zoom
+      };
+    }
+
+    function worldToScreen(worldX, worldY) {
+      return {
+        x: worldX * zoom + viewportX,
+        y: worldY * zoom + viewportY
+      };
+    }
+
+    // Hit detection
+    function getItemAtPosition(worldX, worldY) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        if (worldX >= item.x && worldX <= item.x + item.width &&
+            worldY >= item.y && worldY <= item.y + item.height) {
+          return item;
+        }
+      }
+      return null;
+    }
+
+    function getResizeHandle(item, worldX, worldY) {
+      if (!item || item.type !== 'product') return null;
+      
+      const handleSize = 10 / zoom;
+      const threshold = 5 / zoom;
+      
+      const handles = [
+        { name: 'nw', x: item.x - 5, y: item.y - 5 },
+        { name: 'ne', x: item.x + item.width - handleSize + 5, y: item.y - 5 },
+        { name: 'sw', x: item.x - 5, y: item.y + item.height - handleSize + 5 },
+        { name: 'se', x: item.x + item.width - handleSize + 5, y: item.y + item.height - handleSize + 5 }
+      ];
+      
+      for (let handle of handles) {
+        if (worldX >= handle.x - threshold && worldX <= handle.x + handleSize + threshold &&
+            worldY >= handle.y - threshold && worldY <= handle.y + handleSize + threshold) {
+          return handle.name;
+        }
+      }
+      
+      return null;
+    }
+
+    // Mouse events
+    canvas.addEventListener('dblclick', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      const item = getItemAtPosition(world.x, world.y);
+      if (item && item.type === 'product') {
+        item.flipped = !item.flipped;
+        draw();
+      } else if (item && item.type === 'project-thumbnail') {
+        // Expand project thumbnail into individual products
+        expandProjectThumbnail(item);
+      } else if (item && item.type === 'text') {
+        const newText = prompt('Edit text:', item.text);
+        if (newText !== null) {
+          item.text = newText;
+          draw();
+        }
+      }
+    });
+    
+    function expandProjectThumbnail(thumbnail) {
+      const projectItems = items.filter(item => 
+        item.projectId === thumbnail.projectId && item.type === 'product'
+      );
+      
+      // Clear canvas - remove all items except products that belong to other projects
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        // Keep only products that belong to other projects (not currently being opened)
+        if (!(item.type === 'product' && item.projectId !== thumbnail.projectId)) {
+          items.splice(i, 1);
+        }
+      }
+      
+      // Calculate grid layout for products
+      const rect = canvas.getBoundingClientRect();
+      const spacing = 30;
+      const cardWidth = 250;
+      const cardHeight = 250;
+      const columns = 5;
+      
+      // Calculate grid dimensions
+      const gridRows = Math.ceil(projectItems.length / columns);
+      const totalGridWidth = columns * cardWidth + (columns - 1) * spacing;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * spacing;
+      
+      // Right-align the grid
+      const startX = rect.width - totalGridWidth - 120;
+      const startY = (rect.height - totalGridHeight) / 2;
+      
+      // Add products to canvas
+      projectItems.forEach((productData, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        
+        const newItem = {
+          type: 'product',
+          x: startX + col * (cardWidth + spacing),
+          y: startY + row * (cardHeight + spacing),
+          width: cardWidth,
+          height: cardHeight,
+          imagePath: productData.imagePath,
+          title: productData.title,
+          brand: productData.brand,
+          color: productData.color,
+          productCategory: productData.productCategory,
+          content: productData.content,
+          price: productData.price,
+          flipped: false,
+          id: generateId(),
+          projectId: productData.projectId
+        };
+        
+        items.push(newItem);
+      });
+      
+      updateProjectsList();
+      draw();
+    }
+    
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      if (currentTool === 'select') {
+        // Resize disabled
+        /*
+        // Check if clicking on a resize handle first
+        if (selectedItem && selectedItem.type === 'product') {
+          const handle = getResizeHandle(selectedItem, world.x, world.y);
+          if (handle) {
+            isResizing = true;
+            resizeHandle = handle;
+            resizeStartX = world.x;
+            resizeStartY = world.y;
+            resizeStartWidth = selectedItem.width;
+            resizeStartHeight = selectedItem.height;
+            return;
+          }
+        }
+        */
+        
+        const item = getItemAtPosition(world.x, world.y);
+        
+        if (item) {
+          selectedItem = item;
+          // Start potential drag to sidebar
+          draggedCanvasItem = item;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          
+          // Move to front
+          items.splice(items.indexOf(item), 1);
+          items.push(item);
+        } else {
+          selectedItem = null;
+          draggedCanvasItem = null;
+          // Pan disabled
+          // isDragging = true;
+          // dragStartX = mouseX;
+          // dragStartY = mouseY;
+        }
+      } else {
+        // Check if clicking on existing text item when text tool is selected
+        const item = getItemAtPosition(world.x, world.y);
+        if (currentTool === 'text' && item && item.type === 'text') {
+          // Edit existing text item
+          const newText = prompt('Edit text:', item.text);
+          if (newText !== null) {
+            item.text = newText;
+            selectedItem = item;
+          }
+          draw();
+          return; // Don't add new item
+        } else {
+          // Add new item
+          addItem(currentTool, world.x, world.y);
+        }
+      }
+      
+      draw();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      // Check if we should start dragging to sidebar
+      if (draggedCanvasItem && !isDraggingToSidebar) {
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - dragStartX, 2) + 
+          Math.pow(e.clientY - dragStartY, 2)
+        );
+        if (distance > 5) {
+          isDraggingToSidebar = true;
+          createDragPreview(e, draggedCanvasItem);
+        }
+      }
+      
+      // Pan disabled
+      /*
+      if (isDragging) {
+        const dx = mouseX - dragStartX;
+        const dy = mouseY - dragStartY;
+        viewportX += dx;
+        viewportY += dy;
+        dragStartX = mouseX;
+        dragStartY = mouseY;
+        draw();
+      } else */
+      // Resize disabled
+      /*
+      if (isResizing && selectedItem) {
+        const dx = world.x - resizeStartX;
+        const dy = world.y - resizeStartY;
+        const minSize = 100;
+        
+        if (resizeHandle === 'se') {
+          selectedItem.width = Math.max(minSize, resizeStartWidth + dx);
+          selectedItem.height = Math.max(minSize, resizeStartHeight + dy);
+        } else if (resizeHandle === 'sw') {
+          const newWidth = Math.max(minSize, resizeStartWidth - dx);
+          if (newWidth > minSize) {
+            selectedItem.x = selectedItem.x + (selectedItem.width - newWidth);
+          }
+          selectedItem.width = newWidth;
+          selectedItem.height = Math.max(minSize, resizeStartHeight + dy);
+        } else if (resizeHandle === 'ne') {
+          selectedItem.width = Math.max(minSize, resizeStartWidth + dx);
+          const newHeight = Math.max(minSize, resizeStartHeight - dy);
+          if (newHeight > minSize) {
+            selectedItem.y = selectedItem.y + (selectedItem.height - newHeight);
+          }
+          selectedItem.height = newHeight;
+        } else if (resizeHandle === 'nw') {
+          const newWidth = Math.max(minSize, resizeStartWidth - dx);
+          const newHeight = Math.max(minSize, resizeStartHeight - dy);
+          if (newWidth > minSize) {
+            selectedItem.x = selectedItem.x + (selectedItem.width - newWidth);
+          }
+          if (newHeight > minSize) {
+            selectedItem.y = selectedItem.y + (selectedItem.height - newHeight);
+          }
+          selectedItem.width = newWidth;
+          selectedItem.height = newHeight;
+        }
+        
+        draw();
+      } else */
+      // Canvas dragging disabled for products
+      /*
+      if (draggedItem) {
+        draggedItem.x = world.x - dragOffsetX;
+        draggedItem.y = world.y - dragOffsetY;
+        draw();
+      } else {
+      */
+        // Update cursor based on hover
+        // Resize disabled
+        /*
+        if (selectedItem && selectedItem.type === 'product') {
+          const handle = getResizeHandle(selectedItem, world.x, world.y);
+          if (handle) {
+            canvas.style.cursor = handle + '-resize';
+            return;
+          }
+        }
+        */
+        const item = getItemAtPosition(world.x, world.y);
+        canvas.style.cursor = item ? 'pointer' : 'default';
+      // }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+      draggedItem = null;
+      isResizing = false;
+      resizeHandle = null;
+      canvas.style.cursor = 'default';
+      
+      // Reset canvas drag state
+      if (isDraggingToSidebar) {
+        removeDragPreview();
+      }
+      isDraggingToSidebar = false;
+      draggedCanvasItem = null;
+    });
+
+    // Zoom
+    // Zoom disabled
+    /*
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const worldBeforeZoom = screenToWorld(mouseX, mouseY);
+      
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      zoom = Math.max(0.1, Math.min(5, zoom * zoomFactor));
+      
+      const worldAfterZoom = screenToWorld(mouseX, mouseY);
+      
+      viewportX += (worldAfterZoom.x - worldBeforeZoom.x) * zoom;
+      viewportY += (worldAfterZoom.y - worldBeforeZoom.y) * zoom;
+      
+      draw();
+    }, { passive: false });
+    */
+
+    // Sort dropdown functionality
+    function toggleSortDropdown() {
+      const dropdown = document.getElementById('sortDropdown');
+      dropdown.classList.toggle('active');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('sortDropdown');
+      const sortBtn = document.getElementById('sortBtn');
+      if (!dropdown.contains(e.target) && !sortBtn.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    function sortProducts(sortType) {
+      const products = items.filter(item => item.type === 'product');
+      if (products.length === 0) {
+        console.log('No products to sort');
+        return;
+      }
+
+      // Close dropdown
+      document.getElementById('sortDropdown').classList.remove('active');
+
+      // Sort products based on type
+      let sortedProducts = [...products];
+      
+      if (sortType === 'newest') {
+        // Reverse current order (newest first)
+        sortedProducts.reverse();
+      } else if (sortType === 'oldest') {
+        // Keep current order (oldest first)
+        // No change needed
+      } else if (sortType === 'price-high') {
+        // Sort by price high to low
+        sortedProducts.sort((a, b) => {
+          const priceA = parseFloat(a.price.replace('$', '').replace('/yd', '').trim());
+          const priceB = parseFloat(b.price.replace('$', '').replace('/yd', '').trim());
+          return priceB - priceA;
+        });
+      } else if (sortType === 'price-low') {
+        // Sort by price low to high
+        sortedProducts.sort((a, b) => {
+          const priceA = parseFloat(a.price.replace('$', '').replace('/yd', '').trim());
+          const priceB = parseFloat(b.price.replace('$', '').replace('/yd', '').trim());
+          return priceA - priceB;
+        });
+      }
+
+      // Get grid layout parameters
+      const rect = canvas.getBoundingClientRect();
+      const gridColumns = 5;
+      const cardWidth = 250;
+      const cardHeight = 250;
+      const gap = 30;
+
+      const gridRows = Math.ceil(products.length / gridColumns);
+      const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+
+      const startX = rect.width - totalGridWidth - 120;
+      const startY = (rect.height - totalGridHeight) / 2;
+
+      // Create animations for sorted order
+      const animations = sortedProducts.map((product, index) => {
+        const col = index % gridColumns;
+        const row = Math.floor(index / gridColumns);
+
+        return {
+          product: product,
+          startX: product.x,
+          startY: product.y,
+          endX: startX + col * (cardWidth + gap),
+          endY: startY + row * (cardHeight + gap)
+        };
+      });
+
+      // Animate to new positions
+      const duration = 800;
+      const startTime = performance.now();
+
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function (ease-in-out cubic)
+        const easeProgress = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+        // Update positions
+        animations.forEach(anim => {
+          anim.product.x = anim.startX + (anim.endX - anim.startX) * easeProgress;
+          anim.product.y = anim.startY + (anim.endY - anim.startY) * easeProgress;
+        });
+
+        draw();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          // After animation, update items array order
+          // Remove all products from items
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (items[i].type === 'product') {
+              items.splice(i, 1);
+            }
+          }
+
+          // Add sorted products back
+          items.unshift(...sortedProducts);
+
+          draw();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Tool selection
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tool = btn.dataset.tool;
+        // Just activate the tool, no modal for projects
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool = tool;
+      });
+    });
+
+    // Controls
+    /*
+    document.getElementById('zoomIn').addEventListener('click', () => {
+      zoom = Math.min(5, zoom * 1.2);
+      draw();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', () => {
+      zoom = Math.max(0.1, zoom / 1.2);
+      draw();
+    });
+    */
+
+    document.getElementById('resetView').addEventListener('click', () => {
+      viewportX = 0;
+      viewportY = 0;
+      zoom = 1;
+      draw();
+    });
+
+    document.getElementById('deleteItem').addEventListener('click', () => {
+      deleteSelectedItem();
+    });
+
+    // Delete selected item function
+    function deleteSelectedItem() {
+      if (selectedItem) {
+        const index = items.indexOf(selectedItem);
+        if (index > -1) {
+          items.splice(index, 1);
+          selectedItem = null;
+          updateProjectsList();
+          draw();
+        }
+      }
+    }
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      // Delete or Backspace key
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItem) {
+        e.preventDefault();
+        deleteSelectedItem();
+      }
+    });
+
+    // Add new items
+    function addItem(type, x, y) {
+      const colors = ['#FFE680', '#FF9E9E', '#A0D8FF', '#B4E7CE', '#E7B4E7', '#FFD4A3'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      let newItem;
+      
+      if (type === 'product') {
+        const randomImage = productImages[Math.floor(Math.random() * productImages.length)];
+        const fileName = randomImage.split('/').pop();
+        const parts = fileName.replace('_detail.jpg', '').split('_');
+        
+        // Extract brand, title, and color from filename
+        // Format: BRAND_Title_ColorCode_detail.jpg
+        const brandCode = parts[0];
+        const productName = parts[1] || 'Product';
+        const colorCode = parts[2] || '';
+        
+        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
+                     brandCode === 'MHRM' ? 'Maharam' : 
+                     'Maharam';
+        
+        newItem = {
+          type: 'product',
+          x: x - 125,
+          y: y - 125,
+          width: 250,
+          height: 250,
+          imagePath: randomImage,
+          title: productName,
+          brand: brand,
+          color: colorCode,
+          productCategory: 'Upholstery',
+          content: 'Textile',
+          price: '$85.00 / yd',
+          flipped: false,
+          id: generateId()
+        };
+      } else if (type === 'text') {
+        const textContent = prompt('Enter text:', 'Click to edit text');
+        if (textContent === null) {
+          return; // User cancelled
+        }
+        newItem = {
+          type: 'text',
+          x: x,
+          y: y,
+          width: 300,
+          height: 80,
+          text: textContent,
+          id: generateId()
+        };
+      }
+      
+      if (newItem) {
+        items.push(newItem);
+        selectedItem = newItem;
+        draw();
+      }
+    }
+
+    // Drag preview functions
+    let dragPreviewElement = null;
+    
+    function createDragPreview(e, item) {
+      dragPreviewElement = document.createElement('div');
+      dragPreviewElement.style.position = 'fixed';
+      dragPreviewElement.style.pointerEvents = 'none';
+      dragPreviewElement.style.zIndex = '1000';
+      dragPreviewElement.style.background = 'white';
+      dragPreviewElement.style.border = '2px solid #007aff';
+      dragPreviewElement.style.borderRadius = '8px';
+      dragPreviewElement.style.padding = '8px 12px';
+      dragPreviewElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+      dragPreviewElement.style.opacity = '0.9';
+      
+      const icon = item.type === 'product' ? '🖼️' : '📄';
+      const text = item.type === 'product' ? 
+        `${item.title || 'Product'}${item.color ? ' - ' + item.color : ''}` :
+        item.text.substring(0, 30);
+      
+      dragPreviewElement.innerHTML = `${icon} ${text}`;
+      document.body.appendChild(dragPreviewElement);
+      
+      updateDragPreviewPosition(e);
+      
+      // Add global mousemove listener
+      document.addEventListener('mousemove', updateDragPreviewPosition);
+    }
+    
+    function updateDragPreviewPosition(e) {
+      if (dragPreviewElement) {
+        dragPreviewElement.style.left = (e.clientX + 10) + 'px';
+        dragPreviewElement.style.top = (e.clientY + 10) + 'px';
+      }
+    }
+    
+    function removeDragPreview() {
+      if (dragPreviewElement) {
+        document.removeEventListener('mousemove', updateDragPreviewPosition);
+        document.body.removeChild(dragPreviewElement);
+        dragPreviewElement = null;
+      }
+    }
+
+    // Product Modal functionality
+    let allProjectsData = [];
+    
+    function openProductModal() {
+      const modal = document.getElementById('productModal');
+      
+      // Build projects data array with their products
+      allProjectsData = projects.map(project => {
+        const projectItems = items.filter(item => item.projectId === project.id && item.type === 'product');
+        return {
+          id: project.id,
+          name: project.name,
+          items: projectItems,
+          count: projectItems.length
+        };
+      });
+      
+      // Display all projects
+      renderProjects(allProjectsData);
+      
+      modal.classList.add('active');
+    }
+    
+    function applyFilters() {
+      const searchQuery = document.getElementById('productSearch').value.toLowerCase();
+      
+      let filtered = allProjectsData;
+      
+      if (searchQuery) {
+        filtered = filtered.filter(p => 
+          p.name.toLowerCase().includes(searchQuery)
+        );
+      }
+      
+      renderProjects(filtered);
+    }
+    
+    function renderProjects(projects) {
+      const productGrid = document.getElementById('productGrid');
+      productGrid.innerHTML = '';
+      
+      projects.forEach(project => {
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.onclick = () => selectProject(project);
+        
+        // Project header
+        const header = document.createElement('div');
+        header.className = 'project-card-header';
+        header.innerHTML = `
+          <div class="project-card-icon">📂</div>
+          <div class="project-card-title">${project.name}</div>
+          <div class="project-card-count">${project.count}</div>
+        `;
+        card.appendChild(header);
+        
+        // Product preview grid (show up to 4 products)
+        if (project.items.length > 0) {
+          const preview = document.createElement('div');
+          preview.className = 'project-card-preview';
+          
+          const itemsToShow = project.items.slice(0, 4);
+          itemsToShow.forEach((item, index) => {
+            if (index < 3) {
+              const previewItem = document.createElement('div');
+              previewItem.className = 'project-preview-item';
+              if (item.imagePath) {
+                previewItem.innerHTML = `<img src="${item.imagePath}" alt="${item.title || 'Product'}">`;
+              }
+              preview.appendChild(previewItem);
+            } else if (index === 3) {
+              const previewItem = document.createElement('div');
+              previewItem.className = 'project-preview-item';
+              if (project.count > 4) {
+                previewItem.innerHTML = `<div class="project-preview-more">+${project.count - 3}</div>`;
+              } else {
+                previewItem.innerHTML = `<img src="${item.imagePath}" alt="${item.title || 'Product'}">`;
+              }
+              preview.appendChild(previewItem);
+            }
+          });
+          
+          card.appendChild(preview);
+        }
+        
+        productGrid.appendChild(card);
+      });
+    }
+    
+    function closeProductModal() {
+      const modal = document.getElementById('productModal');
+      modal.classList.remove('active');
+    }
+    
+    function selectProject(project) {
+      closeProductModal();
+      
+      if (project.items.length === 0) {
+        alert('This project has no products.');
+        return;
+      }
+      
+      const rect = canvas.getBoundingClientRect();
+      const spacing = 30;
+      const cardWidth = 250;
+      const cardHeight = 250;
+      
+      // Calculate grid layout for products
+      const columns = Math.ceil(Math.sqrt(project.items.length));
+      const startX = (rect.width / 2 - viewportX) / zoom - (columns * (cardWidth + spacing)) / 2;
+      const startY = (rect.height / 2 - viewportY) / zoom - 125;
+      
+      // Add all products from the project to canvas
+      project.items.forEach((sourceItem, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        
+        const newItem = {
+          type: 'product',
+          x: startX + col * (cardWidth + spacing),
+          y: startY + row * (cardHeight + spacing),
+          width: cardWidth,
+          height: cardHeight,
+          imagePath: sourceItem.imagePath,
+          title: sourceItem.title,
+          brand: sourceItem.brand,
+          color: sourceItem.color,
+          productCategory: sourceItem.productCategory,
+          content: sourceItem.content,
+          price: sourceItem.price,
+          flipped: false,
+          id: generateId()
+        };
+        
+        items.push(newItem);
+        
+        if (!newItem.projectId) {
+          newItem.projectId = projects[0].id;
+        }
+      });
+      
+      updateProjectsList();
+      updateFavoritesList();
+      draw();
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('productModal').addEventListener('click', (e) => {
+      if (e.target.id === 'productModal') {
+        closeProductModal();
+      }
+    });
+
+    // Sidebar functionality
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    let sidebarOpen = false;
+
+    sidebarToggle.addEventListener('click', () => {
+      sidebarOpen = !sidebarOpen;
+      sidebar.classList.toggle('open');
+      sidebarToggle.classList.toggle('open');
+      sidebarToggle.textContent = sidebarOpen ? '✕' : '☰';
+    });
+
+    // Projects/Folders system
+    let projectsSectionExpanded = true;
+    
+    // Projects already defined at top of script
+    
+    function toggleProjectsSection() {
+      projectsSectionExpanded = !projectsSectionExpanded;
+      const content = document.getElementById('projectsSectionContent');
+      const icon = document.getElementById('projectsSectionIcon');
+      
+      if (projectsSectionExpanded) {
+        content.style.display = 'block';
+        icon.textContent = '📂';
+      } else {
+        content.style.display = 'none';
+        icon.textContent = '📁';
+      }
+    }
+
+    // Assign initial items to default project
+    items.forEach(item => {
+      if (!item.projectId) {
+        item.projectId = 'default';
+      }
+    });
+
+    function createNewProject() {
+      const projectName = prompt('Enter project name:', 'New Project');
+      if (projectName) {
+        const newProject = {
+          id: generateId(),
+          name: projectName,
+          expanded: true,
+          items: []
+        };
+        projects.push(newProject);
+        
+        // Add new project thumbnail to canvas
+        items.push({
+          type: 'project-thumbnail',
+          x: 0, // Will be repositioned
+          y: 0, // Will be repositioned
+          width: 280,
+          height: 320,
+          projectId: newProject.id,
+          projectName: newProject.name,
+          productCount: 0,
+          previewItems: [],
+          flipped: false,
+          id: generateId()
+        });
+        
+        // Reposition all thumbnails to maintain grid
+        repositionProjectThumbnails();
+        
+        updateProjectsList();
+        draw();
+      }
+    }
+    
+    function repositionProjectThumbnails() {
+      const rect = canvas.getBoundingClientRect();
+      const gridColumns = 3;
+      const cardWidth = 280;
+      const cardHeight = 320;
+      const gap = 30;
+      
+      const thumbnails = items.filter(item => item.type === 'project-thumbnail');
+      const gridRows = Math.ceil(thumbnails.length / gridColumns);
+      const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+      
+      const startX = (rect.width - totalGridWidth) / 2;
+      const startY = (rect.height - totalGridHeight) / 2;
+      
+      thumbnails.forEach((thumbnail, index) => {
+        const col = index % gridColumns;
+        const row = Math.floor(index / gridColumns);
+        
+        thumbnail.x = startX + col * (cardWidth + gap);
+        thumbnail.y = startY + row * (cardHeight + gap);
+      });
+    }
+
+    function deleteProject(projectId) {
+      if (confirm('Delete this project and all its items?')) {
+        const projectIndex = projects.findIndex(p => p.id === projectId);
+        if (projectIndex > -1) {
+          // Remove all items in this project
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (items[i].projectId === projectId) {
+              items.splice(i, 1);
+            }
+          }
+          projects.splice(projectIndex, 1);
+          selectedItem = null;
+          updateProjectsList();
+          draw();
+        }
+      }
+    }
+
+    function renameProject(projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        const newName = prompt('Enter new project name:', project.name);
+        if (newName) {
+          project.name = newName;
+          updateProjectsList();
+        }
+      }
+    }
+
+    function toggleProject(projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        project.expanded = !project.expanded;
+        updateProjectsList();
+      }
+    }
+
+    // Update projects list
+    function updateProjectsList() {
+      const projectsList = document.getElementById('projectsList');
+      projectsList.innerHTML = '';
+      
+      projects.forEach(project => {
+        const projectFolder = document.createElement('div');
+        projectFolder.className = 'project-folder';
+        
+        // Make folder a drop target
+        projectFolder.ondragover = (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          projectFolder.style.background = '#e3f2fd';
+        };
+        projectFolder.ondragleave = (e) => {
+          if (!projectFolder.contains(e.relatedTarget)) {
+            projectFolder.style.background = '';
+          }
+        };
+        projectFolder.ondrop = (e) => {
+          e.preventDefault();
+          projectFolder.style.background = '';
+          
+          // Check if dragging from canvas
+          if (isDraggingToSidebar && draggedCanvasItem) {
+            draggedCanvasItem.projectId = project.id;
+            removeDragPreview();
+            isDraggingToSidebar = false;
+            draggedCanvasItem = null;
+            updateProjectsList();
+            updateFavoritesList();
+            return;
+          }
+          
+          // Handle sidebar drag
+          const itemId = e.dataTransfer.getData('text/plain');
+          const draggedItem = items.find(item => item.id === itemId);
+          if (draggedItem) {
+            draggedItem.projectId = project.id;
+            updateProjectsList();
+            updateFavoritesList();
+          }
+        };
+        
+        const projectHeader = document.createElement('div');
+        projectHeader.className = 'project-header';
+        
+        const projectTitle = document.createElement('div');
+        projectTitle.className = 'project-title';
+        
+        const projectItems = items.filter(item => item.projectId === project.id && item.type !== 'project-thumbnail');
+        const expandIcon = project.expanded ? '📂' : '📁';
+        
+        projectTitle.innerHTML = `${expandIcon} ${project.name} (${projectItems.length})`;
+        projectTitle.onclick = () => toggleProject(project.id);
+        
+        const projectActions = document.createElement('div');
+        projectActions.className = 'project-actions';
+        
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'project-action-btn';
+        renameBtn.innerHTML = '✏️';
+        renameBtn.title = 'Rename';
+        renameBtn.onclick = (e) => {
+          e.stopPropagation();
+          renameProject(project.id);
+        };
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'project-action-btn';
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.title = 'Delete';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteProject(project.id);
+        };
+        
+        projectActions.appendChild(renameBtn);
+        projectActions.appendChild(deleteBtn);
+        
+        projectHeader.appendChild(projectTitle);
+        projectHeader.appendChild(projectActions);
+        
+        const itemsContainer = document.createElement('div');
+        itemsContainer.className = 'project-items';
+        if (project.expanded) {
+          itemsContainer.classList.add('expanded');
+        }
+        
+        projectItems.forEach(item => {
+          const projectItem = document.createElement('div');
+          projectItem.className = 'project-item';
+          if (selectedItem === item) {
+            projectItem.classList.add('selected');
+          }
+          
+          const icon = item.type === 'product' ? '🖼️' : '📄';
+          const text = item.type === 'product' ? (item.title || 'Product') : 
+                       item.text.substring(0, 20);
+          
+          projectItem.innerHTML = `${icon} ${text}${text.length >= 20 ? '...' : ''}`;
+          projectItem.onclick = () => {
+            selectedItem = item;
+            updateProjectsList();
+            draw();
+          };
+          
+          // Make item draggable
+          projectItem.draggable = true;
+          projectItem.ondragstart = (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.id);
+            projectItem.style.opacity = '0.5';
+          };
+          projectItem.ondragend = (e) => {
+            projectItem.style.opacity = '1';
+          };
+          
+          // Add context menu for moving items
+          projectItem.oncontextmenu = (e) => {
+            e.preventDefault();
+            showItemContextMenu(e, item);
+          };
+          
+          itemsContainer.appendChild(projectItem);
+        });
+        
+        projectFolder.appendChild(projectHeader);
+        projectFolder.appendChild(itemsContainer);
+        projectsList.appendChild(projectFolder);
+      });
+    }
+
+    // Update favorites list
+    function updateFavoritesList() {
+      const favoritesList = document.getElementById('favoritesList');
+      favoritesList.innerHTML = '';
+      
+      const favoritesFolder = document.createElement('div');
+      favoritesFolder.className = 'project-folder';
+      
+      // Make folder a drop target
+      favoritesFolder.ondragover = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        favoritesFolder.style.background = '#e3f2fd';
+      };
+      favoritesFolder.ondragleave = (e) => {
+        if (!favoritesFolder.contains(e.relatedTarget)) {
+          favoritesFolder.style.background = '';
+        }
+      };
+      favoritesFolder.ondrop = (e) => {
+        e.preventDefault();
+        favoritesFolder.style.background = '';
+        
+        // Check if dragging from canvas
+        if (isDraggingToSidebar && draggedCanvasItem) {
+          // Items in favorites stay as they are
+          removeDragPreview();
+          isDraggingToSidebar = false;
+          draggedCanvasItem = null;
+          updateFavoritesList();
+          return;
+        }
+        
+        // Handle sidebar drag
+        const itemId = e.dataTransfer.getData('text/plain');
+        const draggedItem = items.find(item => item.id === itemId);
+        if (draggedItem) {
+          // Items in favorites don't have projectId or stay as they are
+          updateFavoritesList();
+        }
+      };
+      
+      const favoritesHeader = document.createElement('div');
+      favoritesHeader.className = 'project-header';
+      
+      const favoritesTitle = document.createElement('div');
+      favoritesTitle.className = 'project-title';
+      
+      const favoriteItems = items; // All items are favorites on this page
+      const expandIcon = '📂';
+      
+      favoritesTitle.innerHTML = `${expandIcon} My Project (${favoriteItems.length})`;
+      
+      favoritesHeader.appendChild(favoritesTitle);
+      
+      const itemsContainer = document.createElement('div');
+      itemsContainer.className = 'project-items expanded';
+      
+      favoriteItems.forEach(item => {
+        const projectItem = document.createElement('div');
+        projectItem.className = 'project-item';
+        if (selectedItem === item) {
+          projectItem.classList.add('selected');
+        }
+        
+        const icon = item.type === 'product' ? '🖼️' : '📄';
+        const itemName = item.type === 'product' ? 
+          `${item.title || 'Product'}${item.color ? ' - ' + item.color : ''}` :
+          item.text.substring(0, 30);
+        
+        projectItem.innerHTML = `${icon} ${itemName}`;
+        projectItem.onclick = () => {
+          selectedItem = item;
+          updateFavoritesList();
+          draw();
+        };
+        
+        // Make item draggable
+        projectItem.draggable = true;
+        projectItem.ondragstart = (e) => {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', item.id);
+          projectItem.style.opacity = '0.5';
+        };
+        projectItem.ondragend = (e) => {
+          projectItem.style.opacity = '1';
+        };
+        
+        itemsContainer.appendChild(projectItem);
+      });
+      
+      favoritesFolder.appendChild(favoritesHeader);
+      favoritesFolder.appendChild(itemsContainer);
+      favoritesList.appendChild(favoritesFolder);
+    }
+
+    // Toggle favorites section
+    let favoritesSectionExpanded = true;
+    
+    function toggleFavoritesSection() {
+      favoritesSectionExpanded = !favoritesSectionExpanded;
+      const content = document.getElementById('favoritesSectionContent');
+      const icon = document.getElementById('favoritesSectionIcon');
+      
+      if (favoritesSectionExpanded) {
+        content.style.display = 'block';
+        icon.textContent = '📂';
+      } else {
+        content.style.display = 'none';
+        icon.textContent = '📁';
+      }
+    }
+
+    function showItemContextMenu(e, item) {
+      const moveToMenu = prompt('Move to project (enter project name):\n' + 
+        projects.map(p => `- ${p.name}`).join('\n'));
+      
+      if (moveToMenu) {
+        const targetProject = projects.find(p => 
+          p.name.toLowerCase() === moveToMenu.toLowerCase()
+        );
+        if (targetProject) {
+          item.projectId = targetProject.id;
+          updateProjectsList();
+        }
+      }
+    }
+
+    // Setup color palette
+    function setupColorPalette() {
+      const colors = ['#FFE680', '#FF9E9E', '#A0D8FF', '#B4E7CE', '#E7B4E7', '#FFD4A3'];
+      const colorPalette = document.getElementById('colorPalette');
+      
+      colors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'sidebar-item';
+        swatch.style.padding = '0';
+        swatch.style.height = '40px';
+        swatch.style.display = 'flex';
+        swatch.style.alignItems = 'center';
+        swatch.style.justifyContent = 'center';
+        
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'color-swatch';
+        colorDiv.style.backgroundColor = color;
+        colorDiv.style.width = '100%';
+        colorDiv.style.height = '100%';
+        colorDiv.style.borderRadius = '6px';
+        
+        swatch.appendChild(colorDiv);
+        
+        colorPalette.appendChild(swatch);
+      });
+    }
+
+    // Clean up grid - arrange products in a grid layout with animation
+    function cleanUpGrid() {
+      const products = items.filter(item => item.type === 'product');
+      if (products.length === 0) return;
+      
+      const gridSpacing = 30;
+      const startX = 100;
+      const startY = 100;
+      
+      // Find the most common width to use as standard
+      const widths = products.map(p => p.width);
+      const avgWidth = widths.reduce((a, b) => a + b, 0) / widths.length;
+      const avgHeight = products.reduce((sum, p) => sum + p.height, 0) / products.length;
+      
+      // Calculate columns based on canvas width
+      const canvasWidth = canvas.getBoundingClientRect().width / zoom;
+      const itemWidthWithSpacing = avgWidth + gridSpacing;
+      const columns = Math.floor((canvasWidth - startX * 2) / itemWidthWithSpacing) || 3;
+      
+      // Store start and end positions for animation
+      const animations = products.map((product, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        
+        return {
+          product: product,
+          startX: product.x,
+          startY: product.y,
+          endX: startX + col * (avgWidth + gridSpacing),
+          endY: startY + row * (avgHeight + gridSpacing)
+        };
+      });
+      
+      // Animate to grid positions
+      const duration = 500; // milliseconds
+      const startTime = performance.now();
+      
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-out cubic)
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        
+        animations.forEach(anim => {
+          anim.product.x = anim.startX + (anim.endX - anim.startX) * easeProgress;
+          anim.product.y = anim.startY + (anim.endY - anim.startY) * easeProgress;
+        });
+        
+        draw();
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          updateProjectsList();
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Sort grid (reverse order with animation)
+    function sortGrid() {
+      const products = items.filter(item => item.type === 'product');
+      if (products.length === 0) {
+        console.log('No products to sort');
+        return;
+      }
+      
+      console.log('Sorting', products.length, 'products');
+      
+      // Get grid layout parameters (match initializeProductGrid)
+      const rect = canvas.getBoundingClientRect();
+      const gridColumns = 5;
+      const cardWidth = 250;
+      const cardHeight = 250;
+      const gap = 30;
+      
+      const gridRows = Math.ceil(products.length / gridColumns);
+      const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+      
+      const startX = (rect.width - totalGridWidth) / 2;
+      const startY = (rect.height - totalGridHeight) / 2;
+      
+      // Store current positions and calculate target positions for reverse order
+      const animations = [];
+      
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        const reversedIndex = products.length - 1 - i;
+        
+        const targetCol = reversedIndex % gridColumns;
+        const targetRow = Math.floor(reversedIndex / gridColumns);
+        
+        animations.push({
+          product: product,
+          startX: product.x,
+          startY: product.y,
+          endX: startX + targetCol * (cardWidth + gap),
+          endY: startY + targetRow * (cardHeight + gap)
+        });
+      }
+      
+      console.log('Starting animation with', animations.length, 'items');
+      
+      // Animate to new positions
+      const duration = 800;
+      const startTime = performance.now();
+      
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-in-out cubic)
+        const easeProgress = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        // Update positions
+        for (let i = 0; i < animations.length; i++) {
+          const anim = animations[i];
+          anim.product.x = anim.startX + (anim.endX - anim.startX) * easeProgress;
+          anim.product.y = anim.startY + (anim.endY - anim.startY) * easeProgress;
+        }
+        
+        draw();
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          console.log('Animation complete - reversing items array');
+          
+          // After animation, reverse the actual order in the items array
+          const reversedProducts = products.reverse();
+          
+          // Remove all products from items
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (items[i].type === 'product') {
+              items.splice(i, 1);
+            }
+          }
+          
+          // Add reversed products back
+          items.unshift(...reversedProducts);
+          
+          console.log('Items array updated');
+          draw();
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Clear canvas
+    function clearCanvas() {
+      if (confirm('Are you sure you want to clear the canvas?')) {
+        items.length = 0;
+        selectedItem = null;
+        updateProjectsList();
+        draw();
+      }
+    }
+
+    // Export canvas
+    function exportCanvas() {
+      const link = document.createElement('a');
+      link.download = 'canvas-export.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    // Initialize sidebar
+    // setupColorPalette();
+    updateProjectsList();
+    updateFavoritesList();
+
+    // Update projects list when items change
+    const originalAddItem = addItem;
+    addItem = function(type, x, y) {
+      originalAddItem(type, x, y);
+      // Assign to first project by default
+      if (items.length > 0 && !items[items.length - 1].projectId) {
+        items[items.length - 1].projectId = projects[0].id;
+      }
+      updateProjectsList();
+    };
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compare - Infinite Canvas Board</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <style>
+    .compare-container {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100vh;
+      background: #ffffff;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .compare-scroll-wrapper {
+      display: flex;
+      height: 100vh;
+      min-width: 100%;
+      padding: 80px 40px 40px 40px;
+      gap: 20px;
+    }
+
+    .compare-column {
+      min-width: 350px;
+      max-width: 350px;
+      height: calc(100vh - 120px);
+      background: #f8f8f8;
+      border-radius: 8px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .compare-column-header {
+      padding: 20px;
+      background: white;
+      border-bottom: 1px solid #e8e8e8;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .compare-column-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .compare-column-subtitle {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .compare-column-content {
+      padding: 20px;
+      flex: 1;
+    }
+
+    .compare-product-image {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      background: white;
+    }
+
+    .compare-product-info {
+      background: white;
+      padding: 20px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .compare-info-label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .compare-info-value {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    .compare-info-value:last-child {
+      margin-bottom: 0;
+    }
+
+    .compare-add-column {
+      min-width: 350px;
+      max-width: 350px;
+      height: calc(100vh - 120px);
+      background: #f8f8f8;
+      border: 2px dashed #d0d0d0;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .compare-add-column:hover {
+      border-color: #007aff;
+      background: #f0f7ff;
+    }
+
+    .compare-add-content {
+      text-align: center;
+      color: #999;
+    }
+
+    .compare-add-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .compare-add-text {
+      font-size: 14px;
+    }
+
+    .compare-remove-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      border: 1px solid #e8e8e8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #999;
+      transition: all 0.2s;
+      z-index: 11;
+    }
+
+    .compare-remove-btn:hover {
+      background: #ff3b30;
+      border-color: #ff3b30;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+  
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">Workspace</div>
+    <div class="sidebar-content">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title" onclick="toggleProjectsSection()" style="cursor: pointer;">
+          <span id="projectsSectionIcon">📂</span> Projects
+        </div>
+        <div id="projectsSectionContent" style="display: block;">
+          <div id="projectsList"></div>
+          <div class="sidebar-item" onclick="createNewProject()" style="background: #f5f5f5; margin-top: 8px;">➕ New Project</div>
+        </div>
+      </div>
+      
+      <div class="sidebar-section">
+        <a href="favorites.html"><div class="sidebar-section-title">Favorites</div></a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title active">Compare</div>
+      </div>
+      <div class="sidebar-section">
+         <a href="palettes.html"><div class="sidebar-section-title">Palettes</div></a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Samples</div>
+      </div>
+      
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Color Search</div>
+        <input type="color" id="colorPicker" class="sidebar-item" style="width: 100%; height: 80px; border: none; border-radius: 4px; cursor: pointer;">
+      </div>
+      
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Actions</div>
+        <div class="sidebar-item" onclick="clearComparison()">🗑️ Clear All</div>
+        <div class="sidebar-item" onclick="exportComparison()">💾 Export</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-container">
+    <div class="compare-scroll-wrapper" id="compareWrapper">
+      <!-- Columns will be added here dynamically -->
+    </div>
+  </div>
+  
+  <div class="toolbar" style="display: none;">
+    <button class="tool-btn active" data-tool="select"><img src="./img/icons/SVG/Asset 1.svg" alt="Select" class="toolbar-icon"> Select</button>
+    <button class="tool-btn" data-tool="product"><img src="./img/icons/SVG/Asset 3.svg" alt="Select" class="toolbar-icon"> Add Product</button>
+    <button class="tool-btn" data-tool="text"><img src="./img/icons/SVG/Asset 5.svg" alt="Select" class="toolbar-icon"> Sort</button>
+  </div>
+
+  <div class="controls" style="display: none;">
+    <button class="control-btn" id="zoomIn" style="display: none;">+</button>
+    <button class="control-btn" id="zoomOut" style="display: none;">−</button>
+    <button class="control-btn" id="resetView" style="display: none;">⌂</button>
+    <button class="control-btn" id="deleteItem" title="Delete selected item">🗑️</button>
+  </div>
+
+
+
+  <script>
+    // Product images available
+    const productImages = [
+      'img/details/KT_Beacon_901925-005_detail.jpg',
+      'img/details/KT_Cozy_Cord_466938-002_detail.jpg',
+      'img/details/KT_Delite_466730-018_detail.jpg',
+      'img/details/KT_Facet_466804-012_detail.jpg',
+      'img/details/KT_Infinite_466734-019_detail.jpg',
+      'img/details/KT_Ponder_901936-002_detail.jpg',
+      'img/details/KT_Vast_466945-009_detail.jpg',
+      'img/details/KT_Villa_901900-005_detail.jpg',
+      'img/details/KT_Wrap_Up_901937-003_detail.jpg',
+      'img/details/MHRM_Cadence_466667-019_detail.jpg',
+      'img/details/MHRM_Connect_466638-009_detail.jpg',
+      'img/details/Maharam_Metaphor_466553_010_detail.jpg',
+      'img/details/Maharam_Method_466579_021_detail.jpg',
+      'img/details/Maharam_Muse_466487_026_detail.jpg',
+      'img/details/Maharam_Transmit_901895_013_detail.jpg'
+    ];
+
+    let compareColumns = [];
+
+    function generateId() {
+      return Date.now() + Math.random().toString(36).substr(2, 9);
+    }
+
+    function parseProductInfo(imagePath) {
+      const fileName = imagePath.split('/').pop();
+      const parts = fileName.replace('_detail.jpg', '').split('_');
+      const brandCode = parts[0];
+      const productName = parts[1] || 'Product';
+      const colorCode = parts[2] || '';
+      const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
+                   brandCode === 'MHRM' ? 'Maharam' : 
+                   'Maharam';
+      
+      return {
+        imagePath,
+        title: productName,
+        brand,
+        color: colorCode,
+        productCategory: 'Upholstery',
+        content: 'Textile',
+        price: '$85.00 / yd',
+        id: generateId()
+      };
+    }
+
+    function createColumn(product) {
+      const column = document.createElement('div');
+      column.className = 'compare-column';
+      column.dataset.id = product.id;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'compare-remove-btn';
+      removeBtn.innerHTML = '✕';
+      removeBtn.onclick = () => removeColumn(product.id);
+
+      const header = document.createElement('div');
+      header.className = 'compare-column-header';
+      header.innerHTML = `
+        <div class="compare-column-title">${product.title}</div>
+        <div class="compare-column-subtitle">${product.brand}</div>
+      `;
+
+      const content = document.createElement('div');
+      content.className = 'compare-column-content';
+      content.innerHTML = `
+        <img src="${product.imagePath}" alt="${product.title}" class="compare-product-image">
+        
+        <div class="compare-product-info">
+          <div class="compare-info-label">Color</div>
+          <div class="compare-info-value">${product.color}</div>
+          
+          <div class="compare-info-label">Category</div>
+          <div class="compare-info-value">${product.productCategory}</div>
+          
+          <div class="compare-info-label">Content</div>
+          <div class="compare-info-value">${product.content}</div>
+          
+          <div class="compare-info-label">Price</div>
+          <div class="compare-info-value">${product.price}</div>
+        </div>
+      `;
+
+      column.appendChild(removeBtn);
+      column.appendChild(header);
+      column.appendChild(content);
+
+      return column;
+    }
+
+    function createAddColumn() {
+      const addColumn = document.createElement('div');
+      addColumn.className = 'compare-add-column';
+      addColumn.innerHTML = `
+        <div class="compare-add-content">
+          <div class="compare-add-icon">+</div>
+          <div class="compare-add-text">Add Product to Compare</div>
+        </div>
+      `;
+      addColumn.onclick = addColumn_click;
+      return addColumn;
+    }
+
+    function addColumn_click() {
+      const randomImage = productImages[Math.floor(Math.random() * productImages.length)];
+      const product = parseProductInfo(randomImage);
+      compareColumns.push(product);
+      renderColumns();
+    }
+
+    function removeColumn(id) {
+      compareColumns = compareColumns.filter(col => col.id !== id);
+      renderColumns();
+    }
+
+    function renderColumns() {
+      const wrapper = document.getElementById('compareWrapper');
+      wrapper.innerHTML = '';
+
+      compareColumns.forEach(product => {
+        wrapper.appendChild(createColumn(product));
+      });
+
+      wrapper.appendChild(createAddColumn());
+    }
+
+    function clearComparison() {
+      if (confirm('Clear all products from comparison?')) {
+        compareColumns = [];
+        renderColumns();
+      }
+    }
+
+    function exportComparison() {
+      alert('Export functionality would be implemented here');
+    }
+
+    // Sidebar functionality
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    let sidebarOpen = false;
+
+    sidebarToggle.addEventListener('click', () => {
+      sidebarOpen = !sidebarOpen;
+      sidebar.classList.toggle('open');
+      sidebarToggle.classList.toggle('open');
+      sidebarToggle.textContent = sidebarOpen ? '✕' : '☰';
+    });
+
+    // Projects/Folders system (minimal for sidebar compatibility)
+    let projectsSectionExpanded = true;
+    
+    function toggleProjectsSection() {
+      projectsSectionExpanded = !projectsSectionExpanded;
+      const content = document.getElementById('projectsSectionContent');
+      const icon = document.getElementById('projectsSectionIcon');
+      
+      if (projectsSectionExpanded) {
+        content.style.display = 'block';
+        icon.textContent = '📂';
+      } else {
+        content.style.display = 'none';
+        icon.textContent = '📁';
+      }
+    }
+
+    function createNewProject() {
+      alert('Project functionality not available on Compare page');
+    }
+
+    // Initialize with 3 sample columns
+    for (let i = 0; i < 3; i++) {
+      const randomImage = productImages[i];
+      const product = parseProductInfo(randomImage);
+      compareColumns.push(product);
+    }
+
+    renderColumns();
+  </script>
+</body>
+</html>
+    const ctx = canvas.getContext('2d');
+
+    // Canvas state
+    let viewportX = 0;
+    let viewportY = 0;
+    let zoom = 1;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let currentTool = 'select';
+    let selectedItem = null;
+    let draggedItem = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let isResizing = false;
+    let resizeHandle = null;
+    let resizeStartX = 0;
+    let resizeStartY = 0;
+    let resizeStartWidth = 0;
+    let resizeStartHeight = 0;
+
+    // Items on the canvas
+    const items = [];
+
+    // Product images available
+    const productImages = [
+      'img/details/KT_Beacon_901925-005_detail.jpg',
+      'img/details/KT_Cozy_Cord_466938-002_detail.jpg',
+      'img/details/KT_Delite_466730-018_detail.jpg',
+      'img/details/KT_Facet_466804-012_detail.jpg',
+      'img/details/KT_Infinite_466734-019_detail.jpg',
+      'img/details/KT_Ponder_901936-002_detail.jpg',
+      'img/details/KT_Vast_466945-009_detail.jpg',
+      'img/details/KT_Villa_901900-005_detail.jpg',
+      'img/details/KT_Wrap_Up_901937-003_detail.jpg',
+      'img/details/MHRM_Cadence_466667-019_detail.jpg',
+      'img/details/MHRM_Connect_466638-009_detail.jpg',
+      'img/details/Maharam_Metaphor_466553_010_detail.jpg',
+      'img/details/Maharam_Method_466579_021_detail.jpg',
+      'img/details/Maharam_Muse_466487_026_detail.jpg',
+      'img/details/Maharam_Transmit_901895_013_detail.jpg'
+    ];
+
+    // Create grid of product images
+    function initializeProductGrid() {
+      const rect = canvas.getBoundingClientRect();
+      const gridColumns = 5;
+      const cardWidth = 250;
+      const cardHeight = 250;
+      const gap = 30;
+      
+      // Calculate grid dimensions
+      const gridRows = Math.ceil(productImages.length / gridColumns);
+      const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+      
+      // Center the grid
+      const startX = (rect.width - totalGridWidth) / 2;
+      const startY = (rect.height - totalGridHeight) / 2;
+      
+      productImages.forEach((imagePath, index) => {
+        const col = index % gridColumns;
+        const row = Math.floor(index / gridColumns);
+        
+        const fileName = imagePath.split('/').pop();
+        const parts = fileName.replace('_detail.jpg', '').split('_');
+        const brandCode = parts[0];
+        const productName = parts[1] || 'Product';
+        const colorCode = parts[2] || '';
+        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
+                     brandCode === 'MHRM' ? 'Maharam' : 
+                     'Maharam';
+        
+        items.push({
+          type: 'product',
+          x: startX + col * (cardWidth + gap),
+          y: startY + row * (cardHeight + gap),
+          width: cardWidth,
+          height: cardHeight,
+          imagePath: imagePath,
+          title: productName,
+          brand: brand,
+          color: colorCode,
+          productCategory: 'Upholstery',
+          content: 'Textile',
+          price: '$85.00 / yd',
+          flipped: false,
+          id: generateId()
+        });
+      });
+    }
+    
+    initializeProductGrid();
+
+    function generateId() {
+      return Date.now() + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Setup canvas
+    function setupCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      
+      ctx.scale(dpr, dpr);
+      
+      draw();
+    }
+
+    window.addEventListener('resize', setupCanvas);
+    setupCanvas();
+
+    // Drawing functions
+    function draw() {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      
+      ctx.save();
+      ctx.translate(viewportX, viewportY);
+      ctx.scale(zoom, zoom);
+      
+      drawGrid();
+      drawItems();
+      
+      ctx.restore();
+    }
+
+    function drawGrid() {
+      const rect = canvas.getBoundingClientRect();
+      const gridSize = 40;
+      const dotSize = 1.5;
+      
+      // Calculate visible area in world coordinates
+      const startX = Math.floor((-viewportX / zoom) / gridSize) * gridSize;
+      const startY = Math.floor((-viewportY / zoom) / gridSize) * gridSize;
+      const endX = Math.ceil((rect.width - viewportX) / zoom / gridSize) * gridSize;
+      const endY = Math.ceil((rect.height - viewportY) / zoom / gridSize) * gridSize;
+      
+      // Draw dots
+      ctx.fillStyle = '#d0d0d0';
+      for (let x = startX; x <= endX; x += gridSize) {
+        for (let y = startY; y <= endY; y += gridSize) {
+          ctx.beginPath();
+          ctx.arc(x, y, dotSize / zoom, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      
+      // Draw major grid lines (every 5 grid units)
+      ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+      ctx.lineWidth = 1 / zoom;
+      
+      ctx.beginPath();
+      for (let x = startX; x <= endX; x += gridSize * 5) {
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+      }
+      for (let y = startY; y <= endY; y += gridSize * 5) {
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawItems() {
+      items.forEach(item => {
+        if (item.type === 'product') {
+          drawProduct(item);
+        } else if (item.type === 'text') {
+          drawText(item);
+        }
+        
+        // Highlight selected item
+        if (selectedItem === item) {
+          ctx.strokeStyle = '#007aff';
+          ctx.lineWidth = 3 / zoom;
+          ctx.strokeRect(item.x - 5, item.y - 5, item.width + 10, item.height + 10);
+          
+          // Resize disabled for favorites
+          /*
+          // Draw resize handles for products
+          if (item.type === 'product') {
+            drawResizeHandles(item);
+          }
+          */
+        }
+      });
+    }
+
+    function drawResizeHandles(item) {
+      const handleSize = 10 / zoom;
+      const handles = [
+        { x: item.x - 5, y: item.y - 5 },
+        { x: item.x + item.width - handleSize + 5, y: item.y - 5 },
+        { x: item.x - 5, y: item.y + item.height - handleSize + 5 },
+        { x: item.x + item.width - handleSize + 5, y: item.y + item.height - handleSize + 5 }
+      ];
+      
+      ctx.fillStyle = '#007aff';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 / zoom;
+      
+      handles.forEach(handle => {
+        ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
+        ctx.strokeRect(handle.x, handle.y, handleSize, handleSize);
+      });
+    }
+
+    function drawProduct(item) {
+      const cornerRadius = 2;
+      
+      // Shadow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 15 / zoom;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6 / zoom;
+      
+      // White background card
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // Border
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.lineWidth = 1 / zoom;
+      roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+      ctx.stroke();
+      
+      if (item.flipped) {
+        // Show text information on back of card
+        ctx.fillStyle = '#f8f8f8';
+        roundRect(ctx, item.x, item.y, item.width, item.height, cornerRadius);
+        ctx.fill();
+        
+        ctx.textAlign = 'center';
+        
+        const centerX = item.x + item.width / 2;
+        let yOffset = item.y + 30;
+        const lineHeight = 20 / zoom;
+        
+        // Title
+        if (item.title) {
+          ctx.font = `${18 / zoom}px "MaharamNeue-Medium", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.title, centerX, yOffset);
+          yOffset += lineHeight + 5 / zoom;
+        }
+        
+        // Brand
+        if (item.brand) {
+          ctx.font = `${18 / zoom}px "MaharamNeue-Medium", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.brand, centerX, yOffset);
+          yOffset += lineHeight;
+        }
+        
+        // Color
+        if (item.color) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.color, centerX, yOffset);
+          yOffset += lineHeight + 10 / zoom;
+        }
+        
+        // Product Category
+        if (item.productCategory) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.productCategory, centerX, yOffset);
+          yOffset += lineHeight;
+        }
+        
+        // Content
+        if (item.content) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.content, centerX, yOffset);
+          yOffset += lineHeight + 10 / zoom;
+        }
+        
+        // Price
+        if (item.price) {
+          ctx.font = `${14 / zoom}px "MaharamNeue-Regular", sans-serif`;
+          ctx.fillStyle = '#333';
+          ctx.fillText(item.price, centerX, yOffset);
+        }
+        
+        ctx.textAlign = 'left';
+      } else {
+        // Show image on front of card
+        // Load and draw image
+        if (!item.imageElement) {
+          item.imageElement = new Image();
+          item.imageElement.src = item.imagePath;
+          item.imageElement.onload = () => draw();
+        }
+        
+        if (item.imageElement.complete) {
+          const padding = 5;
+          const imgWidth = item.width - padding * 2;
+          const imgHeight = item.height - padding * 2;
+          
+          ctx.save();
+          // Clip to rounded rect for image
+          ctx.beginPath();
+          roundRect(ctx, item.x + padding, item.y + padding, imgWidth, imgHeight, cornerRadius - 2);
+          ctx.clip();
+          ctx.drawImage(item.imageElement, item.x + padding, item.y + padding, imgWidth, imgHeight);
+          ctx.restore();
+        }
+        
+        // Product name and color at bottom
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.font = `${11 / zoom}px "MaharamNeue-Regular", sans-serif`;
+        ctx.textAlign = 'center';
+        const bottomText = `${item.title || 'Product'}${item.color ? ' - ' + item.color : ''}`;
+        ctx.fillText(bottomText, item.x + item.width / 2, item.y + item.height - 15);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function drawText(item) {
+      ctx.fillStyle = '#000';
+      ctx.font = `${18 / zoom}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+      wrapText(ctx, item.text, item.x, item.y, item.width, 26 / zoom);
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      radius = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      let currentY = y;
+      
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = ctx.measureText(testLine);
+        
+        if (metrics.width > maxWidth && i > 0) {
+          ctx.fillText(line, x, currentY);
+          line = words[i] + ' ';
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, currentY);
+    }
+
+    // Coordinate conversion
+    function screenToWorld(screenX, screenY) {
+      return {
+        x: (screenX - viewportX) / zoom,
+        y: (screenY - viewportY) / zoom
+      };
+    }
+
+    function worldToScreen(worldX, worldY) {
+      return {
+        x: worldX * zoom + viewportX,
+        y: worldY * zoom + viewportY
+      };
+    }
+
+    // Hit detection
+    function getItemAtPosition(worldX, worldY) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        if (worldX >= item.x && worldX <= item.x + item.width &&
+            worldY >= item.y && worldY <= item.y + item.height) {
+          return item;
+        }
+      }
+      return null;
+    }
+
+    function getResizeHandle(item, worldX, worldY) {
+      if (!item || item.type !== 'product') return null;
+      
+      const handleSize = 10 / zoom;
+      const threshold = 5 / zoom;
+      
+      const handles = [
+        { name: 'nw', x: item.x - 5, y: item.y - 5 },
+        { name: 'ne', x: item.x + item.width - handleSize + 5, y: item.y - 5 },
+        { name: 'sw', x: item.x - 5, y: item.y + item.height - handleSize + 5 },
+        { name: 'se', x: item.x + item.width - handleSize + 5, y: item.y + item.height - handleSize + 5 }
+      ];
+      
+      for (let handle of handles) {
+        if (worldX >= handle.x - threshold && worldX <= handle.x + handleSize + threshold &&
+            worldY >= handle.y - threshold && worldY <= handle.y + handleSize + threshold) {
+          return handle.name;
+        }
+      }
+      
+      return null;
+    }
+
+    // Mouse events
+    canvas.addEventListener('dblclick', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      const item = getItemAtPosition(world.x, world.y);
+      if (item && item.type === 'product') {
+        item.flipped = !item.flipped;
+        draw();
+      } else if (item && item.type === 'text') {
+        const newText = prompt('Edit text:', item.text);
+        if (newText !== null) {
+          item.text = newText;
+          draw();
+        }
+      }
+    });
+    
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      if (currentTool === 'select') {
+        // Resize disabled
+        /*
+        // Check if clicking on a resize handle first
+        if (selectedItem && selectedItem.type === 'product') {
+          const handle = getResizeHandle(selectedItem, world.x, world.y);
+          if (handle) {
+            isResizing = true;
+            resizeHandle = handle;
+            resizeStartX = world.x;
+            resizeStartY = world.y;
+            resizeStartWidth = selectedItem.width;
+            resizeStartHeight = selectedItem.height;
+            return;
+          }
+        }
+        */
+        
+        const item = getItemAtPosition(world.x, world.y);
+        
+        if (item) {
+          selectedItem = item;
+          draggedItem = item;
+          dragOffsetX = world.x - item.x;
+          dragOffsetY = world.y - item.y;
+          
+          // Move to front
+          items.splice(items.indexOf(item), 1);
+          items.push(item);
+        } else {
+          selectedItem = null;
+          // Pan disabled
+          // isDragging = true;
+          // dragStartX = mouseX;
+          // dragStartY = mouseY;
+        }
+      } else {
+        // Check if clicking on existing text item when text tool is selected
+        const item = getItemAtPosition(world.x, world.y);
+        if (currentTool === 'text' && item && item.type === 'text') {
+          // Edit existing text item
+          const newText = prompt('Edit text:', item.text);
+          if (newText !== null) {
+            item.text = newText;
+            selectedItem = item;
+          }
+          draw();
+          return; // Don't add new item
+        } else {
+          // Add new item
+          addItem(currentTool, world.x, world.y);
+        }
+      }
+      
+      draw();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      // Pan disabled
+      /*
+      if (isDragging) {
+        const dx = mouseX - dragStartX;
+        const dy = mouseY - dragStartY;
+        viewportX += dx;
+        viewportY += dy;
+        dragStartX = mouseX;
+        dragStartY = mouseY;
+        draw();
+      } else */
+      // Resize disabled
+      /*
+      if (isResizing && selectedItem) {
+        const dx = world.x - resizeStartX;
+        const dy = world.y - resizeStartY;
+        const minSize = 100;
+        
+        if (resizeHandle === 'se') {
+          selectedItem.width = Math.max(minSize, resizeStartWidth + dx);
+          selectedItem.height = Math.max(minSize, resizeStartHeight + dy);
+        } else if (resizeHandle === 'sw') {
+          const newWidth = Math.max(minSize, resizeStartWidth - dx);
+          if (newWidth > minSize) {
+            selectedItem.x = selectedItem.x + (selectedItem.width - newWidth);
+          }
+          selectedItem.width = newWidth;
+          selectedItem.height = Math.max(minSize, resizeStartHeight + dy);
+        } else if (resizeHandle === 'ne') {
+          selectedItem.width = Math.max(minSize, resizeStartWidth + dx);
+          const newHeight = Math.max(minSize, resizeStartHeight - dy);
+          if (newHeight > minSize) {
+            selectedItem.y = selectedItem.y + (selectedItem.height - newHeight);
+          }
+          selectedItem.height = newHeight;
+        } else if (resizeHandle === 'nw') {
+          const newWidth = Math.max(minSize, resizeStartWidth - dx);
+          const newHeight = Math.max(minSize, resizeStartHeight - dy);
+          if (newWidth > minSize) {
+            selectedItem.x = selectedItem.x + (selectedItem.width - newWidth);
+          }
+          if (newHeight > minSize) {
+            selectedItem.y = selectedItem.y + (selectedItem.height - newHeight);
+          }
+          selectedItem.width = newWidth;
+          selectedItem.height = newHeight;
+        }
+        
+        draw();
+      } else */
+      if (draggedItem) {
+        draggedItem.x = world.x - dragOffsetX;
+        draggedItem.y = world.y - dragOffsetY;
+        draw();
+      } else {
+        // Update cursor based on hover
+        // Resize disabled
+        /*
+        if (selectedItem && selectedItem.type === 'product') {
+          const handle = getResizeHandle(selectedItem, world.x, world.y);
+          if (handle) {
+            canvas.style.cursor = handle + '-resize';
+            return;
+          }
+        }
+        */
+        const item = getItemAtPosition(world.x, world.y);
+        canvas.style.cursor = item ? 'move' : 'grab';
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+      draggedItem = null;
+      isResizing = false;
+      resizeHandle = null;
+      canvas.style.cursor = 'grab';
+    });
+
+    // Zoom
+    // Zoom disabled
+    /*
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const worldBeforeZoom = screenToWorld(mouseX, mouseY);
+      
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      zoom = Math.max(0.1, Math.min(5, zoom * zoomFactor));
+      
+      const worldAfterZoom = screenToWorld(mouseX, mouseY);
+      
+      viewportX += (worldAfterZoom.x - worldBeforeZoom.x) * zoom;
+      viewportY += (worldAfterZoom.y - worldBeforeZoom.y) * zoom;
+      
+      draw();
+    }, { passive: false });
+    */
+
+    // Tool selection
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool = btn.dataset.tool;
+      });
+    });
+
+    // Controls
+    /*
+    document.getElementById('zoomIn').addEventListener('click', () => {
+      zoom = Math.min(5, zoom * 1.2);
+      draw();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', () => {
+      zoom = Math.max(0.1, zoom / 1.2);
+      draw();
+    });
+    */
+
+    document.getElementById('resetView').addEventListener('click', () => {
+      viewportX = 0;
+      viewportY = 0;
+      zoom = 1;
+      draw();
+    });
+
+    document.getElementById('deleteItem').addEventListener('click', () => {
+      deleteSelectedItem();
+    });
+
+    // Delete selected item function
+    function deleteSelectedItem() {
+      if (selectedItem) {
+        const index = items.indexOf(selectedItem);
+        if (index > -1) {
+          items.splice(index, 1);
+          selectedItem = null;
+          updateProjectsList();
+          draw();
+        }
+      }
+    }
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      // Delete or Backspace key
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItem) {
+        e.preventDefault();
+        deleteSelectedItem();
+      }
+    });
+
+    // Add new items
+    function addItem(type, x, y) {
+      const colors = ['#FFE680', '#FF9E9E', '#A0D8FF', '#B4E7CE', '#E7B4E7', '#FFD4A3'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      let newItem;
+      
+      if (type === 'product') {
+        const randomImage = productImages[Math.floor(Math.random() * productImages.length)];
+        const fileName = randomImage.split('/').pop();
+        const parts = fileName.replace('_detail.jpg', '').split('_');
+        
+        // Extract brand, title, and color from filename
+        // Format: BRAND_Title_ColorCode_detail.jpg
+        const brandCode = parts[0];
+        const productName = parts[1] || 'Product';
+        const colorCode = parts[2] || '';
+        
+        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
+                     brandCode === 'MHRM' ? 'Maharam' : 
+                     'Maharam';
+        
+        newItem = {
+          type: 'product',
+          x: x - 125,
+          y: y - 125,
+          width: 250,
+          height: 250,
+          imagePath: randomImage,
+          title: productName,
+          brand: brand,
+          color: colorCode,
+          productCategory: 'Upholstery',
+          content: 'Textile',
+          price: '$85.00 / yd',
+          flipped: false,
+          id: generateId()
+        };
+      } else if (type === 'text') {
+        const textContent = prompt('Enter text:', 'Click to edit text');
+        if (textContent === null) {
+          return; // User cancelled
+        }
+        newItem = {
+          type: 'text',
+          x: x,
+          y: y,
+          width: 300,
+          height: 80,
+          text: textContent,
+          id: generateId()
+        };
+      }
+      
+      if (newItem) {
+        items.push(newItem);
+        selectedItem = newItem;
+        draw();
+      }
+    }
+
+    // Sidebar functionality
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    let sidebarOpen = false;
+
+    sidebarToggle.addEventListener('click', () => {
+      sidebarOpen = !sidebarOpen;
+      sidebar.classList.toggle('open');
+      sidebarToggle.classList.toggle('open');
+      sidebarToggle.textContent = sidebarOpen ? '✕' : '☰';
+    });
+
+    // Projects/Folders system
+    let projectsSectionExpanded = true;
+    
+    const projects = [
+      { id: 'default', name: 'My Project', expanded: true, items: [] },
+      { id: 'ideas', name: 'Ideas', expanded: false, items: [] }
+    ];
+    
+    function toggleProjectsSection() {
+      projectsSectionExpanded = !projectsSectionExpanded;
+      const content = document.getElementById('projectsSectionContent');
+      const icon = document.getElementById('projectsSectionIcon');
+      
+      if (projectsSectionExpanded) {
+        content.style.display = 'block';
+        icon.textContent = '📂';
+      } else {
+        content.style.display = 'none';
+        icon.textContent = '📁';
+      }
+    }
+
+    // Assign initial items to default project
+    items.forEach(item => {
+      if (!item.projectId) {
+        item.projectId = 'default';
+      }
+    });
+
+    function createNewProject() {
+      const projectName = prompt('Enter project name:', 'New Project');
+      if (projectName) {
+        const newProject = {
+          id: generateId(),
+          name: projectName,
+          expanded: true,
+          items: []
+        };
+        projects.push(newProject);
+        updateProjectsList();
+      }
+    }
+
+    function deleteProject(projectId) {
+      if (confirm('Delete this project and all its items?')) {
+        const projectIndex = projects.findIndex(p => p.id === projectId);
+        if (projectIndex > -1) {
+          // Remove all items in this project
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (items[i].projectId === projectId) {
+              items.splice(i, 1);
+            }
+          }
+          projects.splice(projectIndex, 1);
+          selectedItem = null;
+          updateProjectsList();
+          draw();
+        }
+      }
+    }
+
+    function renameProject(projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        const newName = prompt('Enter new project name:', project.name);
+        if (newName) {
+          project.name = newName;
+          updateProjectsList();
+        }
+      }
+    }
+
+    function toggleProject(projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        project.expanded = !project.expanded;
+        updateProjectsList();
+      }
+    }
+
+    // Update projects list
+    function updateProjectsList() {
+      const projectsList = document.getElementById('projectsList');
+      projectsList.innerHTML = '';
+      
+      projects.forEach(project => {
+        const projectFolder = document.createElement('div');
+        projectFolder.className = 'project-folder';
+        
+        const projectHeader = document.createElement('div');
+        projectHeader.className = 'project-header';
+        
+        const projectTitle = document.createElement('div');
+        projectTitle.className = 'project-title';
+        
+        const projectItems = items.filter(item => item.projectId === project.id);
+        const expandIcon = project.expanded ? '📂' : '📁';
+        
+        projectTitle.innerHTML = `${expandIcon} ${project.name} (${projectItems.length})`;
+        projectTitle.onclick = () => toggleProject(project.id);
+        
+        const projectActions = document.createElement('div');
+        projectActions.className = 'project-actions';
+        
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'project-action-btn';
+        renameBtn.innerHTML = '✏️';
+        renameBtn.title = 'Rename';
+        renameBtn.onclick = (e) => {
+          e.stopPropagation();
+          renameProject(project.id);
+        };
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'project-action-btn';
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.title = 'Delete';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteProject(project.id);
+        };
+        
+        projectActions.appendChild(renameBtn);
+        projectActions.appendChild(deleteBtn);
+        
+        projectHeader.appendChild(projectTitle);
+        projectHeader.appendChild(projectActions);
+        
+        const itemsContainer = document.createElement('div');
+        itemsContainer.className = 'project-items';
+        if (project.expanded) {
+          itemsContainer.classList.add('expanded');
+        }
+        
+        projectItems.forEach(item => {
+          const projectItem = document.createElement('div');
+          projectItem.className = 'project-item';
+          if (selectedItem === item) {
+            projectItem.classList.add('selected');
+          }
+          
+          const icon = item.type === 'product' ? '🖼️' : '📄';
+          const text = item.type === 'product' ? (item.title || 'Product') : 
+                       item.text.substring(0, 20);
+          
+          projectItem.innerHTML = `${icon} ${text}${text.length >= 20 ? '...' : ''}`;
+          projectItem.onclick = () => {
+            selectedItem = item;
+            updateProjectsList();
+            draw();
+          };
+          
+          // Add context menu for moving items
+          projectItem.oncontextmenu = (e) => {
+            e.preventDefault();
+            showItemContextMenu(e, item);
+          };
+          
+          itemsContainer.appendChild(projectItem);
+        });
+        
+        projectFolder.appendChild(projectHeader);
+        projectFolder.appendChild(itemsContainer);
+        projectsList.appendChild(projectFolder);
+      });
+    }
+
+    function showItemContextMenu(e, item) {
+      const moveToMenu = prompt('Move to project (enter project name):\n' + 
+        projects.map(p => `- ${p.name}`).join('\n'));
+      
+      if (moveToMenu) {
+        const targetProject = projects.find(p => 
+          p.name.toLowerCase() === moveToMenu.toLowerCase()
+        );
+        if (targetProject) {
+          item.projectId = targetProject.id;
+          updateProjectsList();
+        }
+      }
+    }
+
+    // Setup color palette
+    function setupColorPalette() {
+      const colors = ['#FFE680', '#FF9E9E', '#A0D8FF', '#B4E7CE', '#E7B4E7', '#FFD4A3'];
+      const colorPalette = document.getElementById('colorPalette');
+      
+      colors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'sidebar-item';
+        swatch.style.padding = '0';
+        swatch.style.height = '40px';
+        swatch.style.display = 'flex';
+        swatch.style.alignItems = 'center';
+        swatch.style.justifyContent = 'center';
+        
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'color-swatch';
+        colorDiv.style.backgroundColor = color;
+        colorDiv.style.width = '100%';
+        colorDiv.style.height = '100%';
+        colorDiv.style.borderRadius = '6px';
+        
+        swatch.appendChild(colorDiv);
+        
+        colorPalette.appendChild(swatch);
+      });
+    }
+
+    // Clean up grid - arrange products in a grid layout with animation
+    function cleanUpGrid() {
+      const products = items.filter(item => item.type === 'product');
+      if (products.length === 0) return;
+      
+      const gridSpacing = 30;
+      const startX = 100;
+      const startY = 100;
+      
+      // Find the most common width to use as standard
+      const widths = products.map(p => p.width);
+      const avgWidth = widths.reduce((a, b) => a + b, 0) / widths.length;
+      const avgHeight = products.reduce((sum, p) => sum + p.height, 0) / products.length;
+      
+      // Calculate columns based on canvas width
+      const canvasWidth = canvas.getBoundingClientRect().width / zoom;
+      const itemWidthWithSpacing = avgWidth + gridSpacing;
+      const columns = Math.floor((canvasWidth - startX * 2) / itemWidthWithSpacing) || 3;
+      
+      // Store start and end positions for animation
+      const animations = products.map((product, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        
+        return {
+          product: product,
+          startX: product.x,
+          startY: product.y,
+          endX: startX + col * (avgWidth + gridSpacing),
+          endY: startY + row * (avgHeight + gridSpacing)
+        };
+      });
+      
+      // Animate to grid positions
+      const duration = 500; // milliseconds
+      const startTime = performance.now();
+      
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-out cubic)
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        
+        animations.forEach(anim => {
+          anim.product.x = anim.startX + (anim.endX - anim.startX) * easeProgress;
+          anim.product.y = anim.startY + (anim.endY - anim.startY) * easeProgress;
+        });
+        
+        draw();
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          updateProjectsList();
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Sort grid (reverse order with animation)
+    function sortGrid() {
+      const products = items.filter(item => item.type === 'product');
+      if (products.length === 0) {
+        console.log('No products to sort');
+        return;
+      }
+      
+      console.log('Sorting', products.length, 'products');
+      
+      // Get grid layout parameters (match initializeProductGrid)
+      const rect = canvas.getBoundingClientRect();
+      const gridColumns = 5;
+      const cardWidth = 250;
+      const cardHeight = 250;
+      const gap = 30;
+      
+      const gridRows = Math.ceil(products.length / gridColumns);
+      const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
+      const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
+      
+      const startX = (rect.width - totalGridWidth) / 2;
+      const startY = (rect.height - totalGridHeight) / 2;
+      
+      // Store current positions and calculate target positions for reverse order
+      const animations = [];
+      
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        const reversedIndex = products.length - 1 - i;
+        
+        const targetCol = reversedIndex % gridColumns;
+        const targetRow = Math.floor(reversedIndex / gridColumns);
+        
+        animations.push({
+          product: product,
+          startX: product.x,
+          startY: product.y,
+          endX: startX + targetCol * (cardWidth + gap),
+          endY: startY + targetRow * (cardHeight + gap)
+        });
+      }
+      
+      console.log('Starting animation with', animations.length, 'items');
+      
+      // Animate to new positions
+      const duration = 800;
+      const startTime = performance.now();
+      
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-in-out cubic)
+        const easeProgress = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        // Update positions
+        for (let i = 0; i < animations.length; i++) {
+          const anim = animations[i];
+          anim.product.x = anim.startX + (anim.endX - anim.startX) * easeProgress;
+          anim.product.y = anim.startY + (anim.endY - anim.startY) * easeProgress;
+        }
+        
+        draw();
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          console.log('Animation complete - reversing items array');
+          
+          // After animation, reverse the actual order in the items array
+          const reversedProducts = products.reverse();
+          
+          // Remove all products from items
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (items[i].type === 'product') {
+              items.splice(i, 1);
+            }
+          }
+          
+          // Add reversed products back
+          items.unshift(...reversedProducts);
+          
+          console.log('Items array updated');
+          draw();
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Clear canvas
+    function clearCanvas() {
+      if (confirm('Are you sure you want to clear the canvas?')) {
+        items.length = 0;
+        selectedItem = null;
+        updateProjectsList();
+        draw();
+      }
+    }
+
+    // Export canvas
+    function exportCanvas() {
+      const link = document.createElement('a');
+      link.download = 'canvas-export.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    // Initialize sidebar
+    // setupColorPalette();
+    updateProjectsList();
+
+    // Update projects list when items change
+    const originalAddItem = addItem;
+    addItem = function(type, x, y) {
+      originalAddItem(type, x, y);
+      // Assign to first project by default
+      if (items.length > 0 && !items[items.length - 1].projectId) {
+        items[items.length - 1].projectId = projects[0].id;
+      }
+      updateProjectsList();
+    };
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>
