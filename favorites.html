@@ -183,6 +183,42 @@
       .sort-option:hover {
         background: #f5f5f5;
       }
+      
+      /* Context Menu Styles */
+      .context-menu {
+        position: fixed;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        z-index: 300;
+        display: none;
+        min-width: 180px;
+      }
+      
+      .context-menu.active {
+        display: block;
+      }
+      
+      .context-menu-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        border-radius: 6px;
+        font-family: "MaharamNeue-Regular", sans-serif;
+        font-size: 14px;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .context-menu-item:hover {
+        background: #f5f5f5;
+      }
+      
+      .context-menu-icon {
+        font-size: 16px;
+      }
     </style>
 </head>
 <body>
@@ -255,6 +291,25 @@
     <div class="sort-option" onclick="sortProducts('price-high')">Price: High to Low</div>
     <div class="sort-option" onclick="sortProducts('price-low')">Price: Low to High</div>
   </div>
+  
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" onclick="addSampleToCart()">
+      <span class="context-menu-icon">🛍️</span>
+      <span id="contextMenuCartText">Add Sample to Cart</span>
+    </div>
+    <div class="context-menu-item" onclick="addToCompare()">
+      <span class="context-menu-icon">⚖️</span>
+      <span id="contextMenuCompareText">Add to Compare</span>
+    </div>
+    <div class="context-menu-item" onclick="flipSelectedProduct()">
+      <span class="context-menu-icon">🔄</span>
+      <span id="contextMenuFlipText">Flip Card</span>
+    </div>
+    <div class="context-menu-item" onclick="deleteSelectedItem()">
+      <span class="context-menu-icon">🗑️</span>
+      <span id="contextMenuDeleteText">Delete</span>
+    </div>
+  </div>
 
   <div class="modal-overlay" id="productModal">
     <div class="modal-content">
@@ -316,28 +371,29 @@
 
     // Items on the canvas
     const items = [];
+    
+    // Multi-selection support
+    let selectedItems = [];
 
-    // Product images available
-    const productImages = [
-      'img/details/KT_Beacon_901925-005_detail.jpg',
-      'img/details/KT_Cozy_Cord_466938-002_detail.jpg',
-      'img/details/KT_Delite_466730-018_detail.jpg',
-      'img/details/KT_Facet_466804-012_detail.jpg',
-      'img/details/KT_Infinite_466734-019_detail.jpg',
-      'img/details/KT_Ponder_901936-002_detail.jpg',
-      'img/details/KT_Vast_466945-009_detail.jpg',
-      'img/details/KT_Villa_901900-005_detail.jpg',
-      'img/details/KT_Wrap_Up_901937-003_detail.jpg',
-      'img/details/MHRM_Cadence_466667-019_detail.jpg',
-      'img/details/MHRM_Connect_466638-009_detail.jpg',
-      'img/details/Maharam_Metaphor_466553_010_detail.jpg',
-      'img/details/Maharam_Method_466579_021_detail.jpg',
-      'img/details/Maharam_Muse_466487_026_detail.jpg',
-      'img/details/Maharam_Transmit_901895_013_detail.jpg'
-    ];
+    // Product data (will be loaded from JSON)
+    let productsData = [];
+    
+    // Load product data from JSON
+    async function loadProductData() {
+      try {
+        const response = await fetch('data/products.json');
+        productsData = await response.json();
+        console.log('Loaded', productsData.length, 'products');
+        initializeProductGrid();
+      } catch (error) {
+        console.error('Error loading product data:', error);
+      }
+    }
 
     // Create grid of product images
     function initializeProductGrid() {
+      if (productsData.length === 0) return;
+      
       const rect = canvas.getBoundingClientRect();
       const gridColumns = 5;
       const cardWidth = 250;
@@ -345,7 +401,7 @@
       const gap = 30;
       
       // Calculate grid dimensions
-      const gridRows = Math.ceil(productImages.length / gridColumns);
+      const gridRows = Math.ceil(productsData.length / gridColumns);
       const totalGridWidth = gridColumns * cardWidth + (gridColumns - 1) * gap;
       const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
       
@@ -353,18 +409,9 @@
       const startX = rect.width - totalGridWidth - 120; // 40px padding from right edge
       const startY = (rect.height - totalGridHeight) / 2;
       
-      productImages.forEach((imagePath, index) => {
+      productsData.forEach((productData, index) => {
         const col = index % gridColumns;
         const row = Math.floor(index / gridColumns);
-        
-        const fileName = imagePath.split('/').pop();
-        const parts = fileName.replace('_detail.jpg', '').split('_');
-        const brandCode = parts[0];
-        const productName = parts[1] || 'Product';
-        const colorCode = parts[2] || '';
-        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                     brandCode === 'MHRM' ? 'Maharam' : 
-                     'Maharam';
         
         items.push({
           type: 'product',
@@ -372,20 +419,21 @@
           y: startY + row * (cardHeight + gap),
           width: cardWidth,
           height: cardHeight,
-          imagePath: imagePath,
-          title: productName,
-          brand: brand,
-          color: colorCode,
-          productCategory: 'Upholstery',
-          content: 'Textile',
-          price: '$85.00 / yd',
+          imagePath: productData.imagePath,
+          title: productData.title,
+          brand: productData.brand,
+          color: productData.colorCode,
+          productCategory: productData.productCategory,
+          content: productData.content,
+          price: productData.price,
           flipped: false,
           id: generateId()
         });
       });
     }
     
-    initializeProductGrid();
+    // Load product data and initialize
+    loadProductData();
 
     function generateId() {
       return Date.now() + Math.random().toString(36).substr(2, 9);
@@ -401,7 +449,7 @@
       const cardWidth = 250;
       const cardHeight = 250;
       const gap = 30;
-      const gridRows = Math.ceil(productImages.length / gridColumns);
+      const gridRows = Math.ceil(productsData.length / gridColumns);
       const totalGridHeight = gridRows * cardHeight + (gridRows - 1) * gap;
       const minHeight = Math.max(window.innerHeight, totalGridHeight + 200);
       
@@ -478,16 +526,16 @@
           drawText(item);
         }
         
-        // Highlight selected item
-        if (selectedItem === item) {
+        // Highlight selected item or items in multi-selection
+        if (selectedItem === item || selectedItems.includes(item)) {
           ctx.strokeStyle = '#007aff';
           ctx.lineWidth = 3 / zoom;
           ctx.strokeRect(item.x - 5, item.y - 5, item.width + 10, item.height + 10);
           
           // Resize disabled for favorites
           /*
-          // Draw resize handles for products
-          if (item.type === 'product') {
+          // Draw resize handles for products (only for single selection)
+          if (item.type === 'product' && selectedItem === item && selectedItems.length === 0) {
             drawResizeHandles(item);
           }
           */
@@ -608,16 +656,37 @@
         }
         
         if (item.imageElement.complete) {
-          const padding = 5;
+          const padding = 0;
           const imgWidth = item.width - padding * 2;
           const imgHeight = item.height - padding * 2;
           
           ctx.save();
           // Clip to rounded rect for image
           ctx.beginPath();
-          roundRect(ctx, item.x + padding, item.y + padding, imgWidth, imgHeight, cornerRadius - 2);
+          roundRect(ctx, item.x + padding, item.y + padding, imgWidth, imgHeight, cornerRadius);
           ctx.clip();
-          ctx.drawImage(item.imageElement, item.x + padding, item.y + padding, imgWidth, imgHeight);
+          
+          // Calculate cover mode scaling
+          const imgAspect = item.imageElement.width / item.imageElement.height;
+          const boxAspect = imgWidth / imgHeight;
+          
+          let sourceX = 0, sourceY = 0, sourceWidth = item.imageElement.width, sourceHeight = item.imageElement.height;
+          
+          if (imgAspect > boxAspect) {
+            // Image is wider - crop sides
+            sourceWidth = item.imageElement.height * boxAspect;
+            sourceX = (item.imageElement.width - sourceWidth) / 2;
+          } else {
+            // Image is taller - crop top/bottom
+            sourceHeight = item.imageElement.width / boxAspect;
+            sourceY = (item.imageElement.height - sourceHeight) / 2;
+          }
+          
+          ctx.drawImage(
+            item.imageElement,
+            sourceX, sourceY, sourceWidth, sourceHeight,
+            item.x + padding, item.y + padding, imgWidth, imgHeight
+          );
           ctx.restore();
         }
         
@@ -769,17 +838,35 @@
         const item = getItemAtPosition(world.x, world.y);
         
         if (item) {
-          selectedItem = item;
-          // Start potential drag to sidebar
-          draggedCanvasItem = item;
-          dragStartX = e.clientX;
-          dragStartY = e.clientY;
+          // Handle shift-click for multi-selection
+          if (e.shiftKey && item.type === 'product') {
+            if (selectedItems.includes(item)) {
+              // Remove from selection
+              selectedItems = selectedItems.filter(i => i !== item);
+              if (selectedItem === item) {
+                selectedItem = selectedItems.length > 0 ? selectedItems[0] : null;
+              }
+            } else {
+              // Add to selection
+              selectedItems.push(item);
+              selectedItem = item;
+            }
+          } else {
+            // Clear multi-selection if not shift-clicking
+            selectedItems = [];
+            selectedItem = item;
+            // Start potential drag to sidebar
+            draggedCanvasItem = item;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+          }
           
           // Move to front
           items.splice(items.indexOf(item), 1);
           items.push(item);
         } else {
           selectedItem = null;
+          selectedItems = [];
           draggedCanvasItem = null;
           // Pan disabled
           // isDragging = true;
@@ -912,6 +999,102 @@
       }
       isDraggingToSidebar = false;
       draggedCanvasItem = null;
+    });
+    
+    // Context menu for right-click on products
+    let contextMenuItem = null;
+    
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      const item = getItemAtPosition(world.x, world.y);
+      
+      if (item && item.type === 'product') {
+        contextMenuItem = item;
+        // If clicking on an item that's already in the multi-selection, keep the selection
+        if (!selectedItems.includes(item)) {
+          // If not in multi-selection, make this the only selected item
+          selectedItem = item;
+          selectedItems = [];
+        }
+        showContextMenu(e.clientX, e.clientY);
+        draw();
+      } else {
+        hideContextMenu();
+      }
+    });
+    
+    function showContextMenu(x, y) {
+      const menu = document.getElementById('contextMenu');
+      const count = selectedItems.length > 0 ? selectedItems.length : 1;
+      const isMultiple = count > 1;
+      
+      // Update menu text based on selection count
+      document.getElementById('contextMenuCartText').textContent = 
+        isMultiple ? `Add ${count} Samples to Cart` : 'Add Sample to Cart';
+      document.getElementById('contextMenuCompareText').textContent = 
+        isMultiple ? `Add ${count} to Compare` : 'Add to Compare';
+      document.getElementById('contextMenuFlipText').textContent = 
+        isMultiple ? `Flip ${count} Cards` : 'Flip Card';
+      document.getElementById('contextMenuDeleteText').textContent = 
+        isMultiple ? `Delete ${count} Items` : 'Delete';
+      
+      menu.classList.add('active');
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+    }
+    
+    function hideContextMenu() {
+      const menu = document.getElementById('contextMenu');
+      menu.classList.remove('active');
+      contextMenuItem = null;
+    }
+    
+    function addSampleToCart() {
+      const itemsToAdd = selectedItems.length > 0 ? selectedItems : [contextMenuItem];
+      
+      if (itemsToAdd.length > 0) {
+        const productList = itemsToAdd.map(p => `${p.title} - ${p.brand} - ${p.color}`).join('\n');
+        alert(`${itemsToAdd.length} sample${itemsToAdd.length > 1 ? 's' : ''} added to cart:\n\n${productList}`);
+        console.log('Added to cart:', itemsToAdd);
+      }
+      hideContextMenu();
+    }
+    
+    function addToCompare() {
+      const itemsToAdd = selectedItems.length > 0 ? selectedItems : [contextMenuItem];
+      
+      if (itemsToAdd.length > 0) {
+        const productList = itemsToAdd.map(p => `${p.title} - ${p.brand} - ${p.color}`).join('\n');
+        alert(`${itemsToAdd.length} product${itemsToAdd.length > 1 ? 's' : ''} added to compare:\n\n${productList}`);
+        console.log('Added to compare:', itemsToAdd);
+      }
+      hideContextMenu();
+    }
+    
+    function flipSelectedProduct() {
+      const itemsToFlip = selectedItems.length > 0 ? selectedItems : [contextMenuItem];
+      
+      itemsToFlip.forEach(item => {
+        if (item && item.type === 'product') {
+          item.flipped = !item.flipped;
+        }
+      });
+      
+      draw();
+      hideContextMenu();
+    }
+    
+    // Close context menu when clicking elsewhere
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.context-menu')) {
+        hideContextMenu();
+      }
     });
 
     // Zoom
@@ -1098,15 +1281,23 @@
 
     // Delete selected item function
     function deleteSelectedItem() {
-      if (selectedItem) {
-        const index = items.indexOf(selectedItem);
-        if (index > -1) {
-          items.splice(index, 1);
-          selectedItem = null;
-          updateProjectsList();
-          draw();
+      const itemsToDelete = selectedItems.length > 0 ? selectedItems : [selectedItem];
+      
+      itemsToDelete.forEach(item => {
+        if (item) {
+          const index = items.indexOf(item);
+          if (index > -1) {
+            items.splice(index, 1);
+          }
         }
-      }
+      });
+      
+      selectedItem = null;
+      selectedItems = [];
+      updateProjectsList();
+      updateFavoritesList();
+      draw();
+      hideContextMenu();
     }
 
     // Keyboard shortcuts
@@ -1126,19 +1317,7 @@
       let newItem;
       
       if (type === 'product') {
-        const randomImage = productImages[Math.floor(Math.random() * productImages.length)];
-        const fileName = randomImage.split('/').pop();
-        const parts = fileName.replace('_detail.jpg', '').split('_');
-        
-        // Extract brand, title, and color from filename
-        // Format: BRAND_Title_ColorCode_detail.jpg
-        const brandCode = parts[0];
-        const productName = parts[1] || 'Product';
-        const colorCode = parts[2] || '';
-        
-        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                     brandCode === 'MHRM' ? 'Maharam' : 
-                     'Maharam';
+        const randomProduct = productsData[Math.floor(Math.random() * productsData.length)];
         
         newItem = {
           type: 'product',
@@ -1146,13 +1325,13 @@
           y: y - 125,
           width: 250,
           height: 250,
-          imagePath: randomImage,
-          title: productName,
-          brand: brand,
-          color: colorCode,
-          productCategory: 'Upholstery',
-          content: 'Textile',
-          price: '$85.00 / yd',
+          imagePath: randomProduct.imagePath,
+          title: randomProduct.title,
+          brand: randomProduct.brand,
+          color: randomProduct.colorCode,
+          productCategory: randomProduct.productCategory,
+          content: randomProduct.content,
+          price: randomProduct.price,
           flipped: false,
           id: generateId()
         };
@@ -1230,24 +1409,13 @@
       const modal = document.getElementById('productModal');
       
       // Build product data array
-      allProductsData = productImages.map(imagePath => {
-        const fileName = imagePath.split('/').pop();
-        const parts = fileName.replace('_detail.jpg', '').split('_');
-        const brandCode = parts[0];
-        const productName = parts[1] || 'Product';
-        const colorCode = parts[2] || '';
-        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                     brandCode === 'MHRM' ? 'Maharam' : 
-                     'Maharam';
-        
-        return {
-          imagePath,
-          productName,
-          brand,
-          colorCode,
-          category: 'Upholstery'
-        };
-      });
+      allProductsData = productsData.map(product => ({
+        imagePath: product.imagePath,
+        productName: product.title,
+        brand: product.brand,
+        colorCode: product.colorCode,
+        category: product.productCategory
+      }));
       
       // Populate filter dropdowns
       populateFilters();
@@ -1353,14 +1521,8 @@
     function selectProduct(imagePath) {
       closeProductModal();
       
-      const fileName = imagePath.split('/').pop();
-      const parts = fileName.replace('_detail.jpg', '').split('_');
-      const brandCode = parts[0];
-      const productName = parts[1] || 'Product';
-      const colorCode = parts[2] || '';
-      const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                   brandCode === 'MHRM' ? 'Maharam' : 
-                   'Maharam';
+      const productData = productsData.find(p => p.imagePath === imagePath);
+      if (!productData) return;
       
       const rect = canvas.getBoundingClientRect();
       const centerX = rect.width / 2;
@@ -1372,13 +1534,13 @@
         y: centerY - 125,
         width: 250,
         height: 250,
-        imagePath: imagePath,
-        title: productName,
-        brand: brand,
-        color: colorCode,
-        productCategory: 'Upholstery',
-        content: 'Textile',
-        price: '$85.00 / yd',
+        imagePath: productData.imagePath,
+        title: productData.title,
+        brand: productData.brand,
+        color: productData.colorCode,
+        productCategory: productData.productCategory,
+        content: productData.content,
+        price: productData.price,
         flipped: false,
         id: generateId()
       };

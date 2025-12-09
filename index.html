@@ -246,6 +246,138 @@
       .sort-option:hover {
         background: #f5f5f5;
       }
+      
+      /* List View Styles */
+      .list-view-container {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100vh;
+        background: white;
+        overflow-y: auto;
+        padding: 80px 40px 40px 40px;
+        display: none;
+        z-index: 50;
+      }
+      
+      .list-view-container.active {
+        display: block;
+      }
+      
+      .list-view-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      .list-view-table thead {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        border-bottom: 2px solid #e8e8e8;
+      }
+      
+      .list-view-table th {
+        text-align: left;
+        padding: 16px 20px;
+        font-size: 11px;
+        font-weight: 400;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .list-view-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+        cursor: pointer;
+      }
+      
+      .list-view-table tbody tr:hover {
+        background: #fafafa;
+      }
+      
+      .list-view-table td {
+        padding: 20px;
+        font-size: 13px;
+        color: #333;
+      }
+      
+      .list-view-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+      
+      .list-view-title {
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      
+      .list-view-subtitle {
+        font-size: 12px;
+        color: #999;
+      }
+      
+      .view-toggle-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border: 1px solid #e8e8e8;
+        border-radius: 6px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "MaharamNeue-Regular", sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 150;
+        transition: all 0.2s;
+      }
+      
+      .view-toggle-btn:hover {
+        background: #f5f5f5;
+      }
+      
+      /* Context Menu Styles */
+      .context-menu {
+        position: fixed;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        z-index: 300;
+        display: none;
+        min-width: 180px;
+      }
+      
+      .context-menu.active {
+        display: block;
+      }
+      
+      .context-menu-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        border-radius: 6px;
+        font-family: "MaharamNeue-Regular", sans-serif;
+        font-size: 14px;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .context-menu-item:hover {
+        background: #f5f5f5;
+      }
+      
+      .context-menu-icon {
+        font-size: 16px;
+      }
     </style>
 </head>
 <body>
@@ -255,7 +387,7 @@
     <div class="sidebar-header">Workspace</div>
     <div class="sidebar-content">
       <div class="sidebar-section">
-        <div class="sidebar-section-title active"  style="cursor: pointer;">
+        <div class="sidebar-section-title active" id="projectsSectionTitle" style="cursor: pointer;">
           <span id="projectsSectionIcon">📂</span> Projects
         </div>
         <div id="projectsSectionContent" style="display: block;">
@@ -276,7 +408,7 @@
         <a href="compare.html"><div class="sidebar-section-title">Compare</div></a>
       </div>
       <div class="sidebar-section">
-        <div class="sidebar-section-title">Palettes</div>
+        <div class="sidebar-section-title" id="palettesSectionTitle">Palettes</div>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-section-title">Samples</div>
@@ -299,6 +431,29 @@
 
   <canvas id="canvas"></canvas>
   
+  <div class="list-view-container" id="listViewContainer">
+    <table class="list-view-table">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product</th>
+          <th>Brand</th>
+          <th>Color</th>
+          <th>Category</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody id="listViewBody">
+        <!-- List items will be populated here -->
+      </tbody>
+    </table>
+  </div>
+  
+  <button class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
+    <span id="viewToggleIcon">📋</span>
+    <span id="viewToggleText">List View</span>
+  </button>
+  
   <div class="toolbar">
     <button class="tool-btn active" data-tool="select"><img src="./img/icons/SVG/Asset 1.svg" alt="Select" class="toolbar-icon"> Select</button>
     <button class="tool-btn" data-tool="product"><img src="./img/icons/SVG/Asset 3.svg" alt="Select" class="toolbar-icon"> Add Product</button>
@@ -318,6 +473,21 @@
     <div class="sort-option" onclick="sortProducts('price-high')">Price: High to Low</div>
     <div class="sort-option" onclick="sortProducts('price-low')">Price: Low to High</div>
   </div>
+  
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" onclick="addSampleToCart()">
+      <span class="context-menu-icon">🛍️</span>
+      <span id="contextMenuCartText">Add Sample to Cart</span>
+    </div>
+    <div class="context-menu-item" onclick="flipSelectedProduct()">
+      <span class="context-menu-icon">🔄</span>
+      <span id="contextMenuFlipText">Flip Card</span>
+    </div>
+    <div class="context-menu-item" onclick="deleteSelectedItem()">
+      <span class="context-menu-icon">🗑️</span>
+      <span id="contextMenuDeleteText">Delete</span>
+    </div>
+  </div>
 
   <div class="modal-overlay" id="productModal">
     <div class="modal-content">
@@ -336,6 +506,71 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
+    let currentView = 'canvas'; // 'canvas' or 'list'
+    
+    function toggleView() {
+      const canvas = document.getElementById('canvas');
+      const listView = document.getElementById('listViewContainer');
+      const toggleBtn = document.getElementById('viewToggleBtn');
+      const toggleIcon = document.getElementById('viewToggleIcon');
+      const toggleText = document.getElementById('viewToggleText');
+      const toolbar = document.querySelector('.toolbar');
+      const controls = document.querySelector('.controls');
+      
+      if (currentView === 'canvas') {
+        // Switch to list view
+        currentView = 'list';
+        canvas.style.display = 'none';
+        listView.classList.add('active');
+        toolbar.style.display = 'none';
+        controls.style.display = 'none';
+        toggleIcon.textContent = '🖼️';
+        toggleText.textContent = 'Canvas View';
+        renderListView();
+      } else {
+        // Switch to canvas view
+        currentView = 'canvas';
+        canvas.style.display = 'block';
+        listView.classList.remove('active');
+        toolbar.style.display = 'flex';
+        controls.style.display = 'flex';
+        toggleIcon.textContent = '📋';
+        toggleText.textContent = 'List View';
+      }
+    }
+    
+    function renderListView() {
+      const listBody = document.getElementById('listViewBody');
+      listBody.innerHTML = '';
+      
+      // Get all product items from canvas
+      const productItems = items.filter(item => item.type === 'product');
+      
+      productItems.forEach(product => {
+        const row = document.createElement('tr');
+        row.onclick = () => {
+          selectedItem = product;
+          // Highlight row
+          document.querySelectorAll('.list-view-table tbody tr').forEach(r => r.style.background = '');
+          row.style.background = '#e8f4ff';
+        };
+        
+        row.innerHTML = `
+          <td><img src="${product.imagePath}" class="list-view-image" alt="${product.title}"></td>
+          <td>
+            <div class="list-view-title">${product.title || 'Product'}</div>
+            <div class="list-view-subtitle">${product.content || 'Textile'}</div>
+          </td>
+          <td>${product.brand || 'Maharam'}</td>
+          <td>${product.color || '-'}</td>
+          <td>${product.productCategory || 'Upholstery'}</td>
+          <td>${product.price || '$85.00 / yd'}</td>
+        `;
+        
+        listBody.appendChild(row);
+      });
+    }
+
     // Canvas state
     let viewportX = 0;
     let viewportY = 0;
@@ -345,6 +580,7 @@
     let dragStartY = 0;
     let currentTool = 'select';
     let selectedItem = null;
+    let selectedItems = []; // Array for multi-selection
     let draggedItem = null;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
@@ -360,24 +596,20 @@
     // Items on the canvas
     const items = [];
 
-    // Product images available
-    const productImages = [
-      'img/details/KT_Beacon_901925-005_detail.jpg',
-      'img/details/KT_Cozy_Cord_466938-002_detail.jpg',
-      'img/details/KT_Delite_466730-018_detail.jpg',
-      'img/details/KT_Facet_466804-012_detail.jpg',
-      'img/details/KT_Infinite_466734-019_detail.jpg',
-      'img/details/KT_Ponder_901936-002_detail.jpg',
-      'img/details/KT_Vast_466945-009_detail.jpg',
-      'img/details/KT_Villa_901900-005_detail.jpg',
-      'img/details/KT_Wrap_Up_901937-003_detail.jpg',
-      'img/details/MHRM_Cadence_466667-019_detail.jpg',
-      'img/details/MHRM_Connect_466638-009_detail.jpg',
-      'img/details/Maharam_Metaphor_466553_010_detail.jpg',
-      'img/details/Maharam_Method_466579_021_detail.jpg',
-      'img/details/Maharam_Muse_466487_026_detail.jpg',
-      'img/details/Maharam_Transmit_901895_013_detail.jpg'
-    ];
+    // Product data (will be loaded from JSON)
+    let productsData = [];
+    
+    // Load product data from JSON
+    async function loadProductData() {
+      try {
+        const response = await fetch('data/products.json');
+        productsData = await response.json();
+        console.log('Loaded', productsData.length, 'products');
+        initializeProjectGrid();
+      } catch (error) {
+        console.error('Error loading product data:', error);
+      }
+    }
 
     // Create grid of product images
     // Initialize projects with sample products
@@ -387,6 +619,8 @@
     ];
 
     function initializeProjectGrid() {
+      if (productsData.length === 0) return;
+      
       const rect = canvas.getBoundingClientRect();
       const gridColumns = 3;
       const cardWidth = 280;
@@ -394,25 +628,16 @@
       const gap = 30;
       
       // First, create sample products and assign to projects
-      productImages.forEach((imagePath, index) => {
-        const fileName = imagePath.split('/').pop();
-        const parts = fileName.replace('_detail.jpg', '').split('_');
-        const brandCode = parts[0];
-        const productName = parts[1] || 'Product';
-        const colorCode = parts[2] || '';
-        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                     brandCode === 'MHRM' ? 'Maharam' : 
-                     'Maharam';
-        
+      productsData.forEach((productData, index) => {
         const product = {
           type: 'product',
-          imagePath: imagePath,
-          title: productName,
-          brand: brand,
-          color: colorCode,
-          productCategory: 'Upholstery',
-          content: 'Textile',
-          price: '$85.00 / yd',
+          imagePath: productData.imagePath,
+          title: productData.title,
+          brand: productData.brand,
+          color: productData.colorCode,
+          productCategory: productData.productCategory,
+          content: productData.content,
+          price: productData.price,
           flipped: false,
           id: generateId(),
           projectId: index < 8 ? 'default' : 'ideas'
@@ -453,7 +678,8 @@
       });
     }
     
-    initializeProjectGrid();
+    // Load product data and initialize
+    loadProductData();
 
     function generateId() {
       return Date.now() + Math.random().toString(36).substr(2, 9);
@@ -548,18 +774,15 @@
         }
         
         // Highlight selected item
-        if (selectedItem === item) {
+        if (selectedItem === item || selectedItems.includes(item)) {
           ctx.strokeStyle = '#007aff';
           ctx.lineWidth = 3 / zoom;
           ctx.strokeRect(item.x - 5, item.y - 5, item.width + 10, item.height + 10);
           
-          // Resize disabled for favorites
-          /*
-          // Draw resize handles for products
-          if (item.type === 'product') {
+          // Draw resize handles for products (only for single selection)
+          if (item.type === 'product' && selectedItem === item && selectedItems.length === 0) {
             drawResizeHandles(item);
           }
-          */
         }
       });
     }
@@ -677,16 +900,37 @@
         }
         
         if (item.imageElement.complete) {
-          const padding = 5;
+          const padding = 0;
           const imgWidth = item.width - padding * 2;
           const imgHeight = item.height - padding * 2;
           
           ctx.save();
           // Clip to rounded rect for image
           ctx.beginPath();
-          roundRect(ctx, item.x + padding, item.y + padding, imgWidth, imgHeight, cornerRadius - 2);
+          roundRect(ctx, item.x + padding, item.y + padding, imgWidth, imgHeight, cornerRadius);
           ctx.clip();
-          ctx.drawImage(item.imageElement, item.x + padding, item.y + padding, imgWidth, imgHeight);
+          
+          // Calculate cover mode scaling
+          const imgAspect = item.imageElement.width / item.imageElement.height;
+          const boxAspect = imgWidth / imgHeight;
+          
+          let sourceX = 0, sourceY = 0, sourceWidth = item.imageElement.width, sourceHeight = item.imageElement.height;
+          
+          if (imgAspect > boxAspect) {
+            // Image is wider - crop sides
+            sourceWidth = item.imageElement.height * boxAspect;
+            sourceX = (item.imageElement.width - sourceWidth) / 2;
+          } else {
+            // Image is taller - crop top/bottom
+            sourceHeight = item.imageElement.width / boxAspect;
+            sourceY = (item.imageElement.height - sourceHeight) / 2;
+          }
+          
+          ctx.drawImage(
+            item.imageElement,
+            sourceX, sourceY, sourceWidth, sourceHeight,
+            item.x + padding, item.y + padding, imgWidth, imgHeight
+          );
           ctx.restore();
         }
         
@@ -793,7 +1037,28 @@
               ctx.beginPath();
               roundRect(ctx, px, py, previewWidth, previewHeight, 4);
               ctx.clip();
-              ctx.drawImage(previewItem.previewImageElement, px, py, previewWidth, previewHeight);
+              
+              // Calculate cover mode scaling
+              const imgAspect = previewItem.previewImageElement.width / previewItem.previewImageElement.height;
+              const boxAspect = previewWidth / previewHeight;
+              
+              let sourceX = 0, sourceY = 0, sourceWidth = previewItem.previewImageElement.width, sourceHeight = previewItem.previewImageElement.height;
+              
+              if (imgAspect > boxAspect) {
+                // Image is wider - crop sides
+                sourceWidth = previewItem.previewImageElement.height * boxAspect;
+                sourceX = (previewItem.previewImageElement.width - sourceWidth) / 2;
+              } else {
+                // Image is taller - crop top/bottom
+                sourceHeight = previewItem.previewImageElement.width / boxAspect;
+                sourceY = (previewItem.previewImageElement.height - sourceHeight) / 2;
+              }
+              
+              ctx.drawImage(
+                previewItem.previewImageElement,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                px, py, previewWidth, previewHeight
+              );
               ctx.restore();
               
               // Border around preview
@@ -934,10 +1199,99 @@
       }
     });
     
+    // Context menu for right-click on products
+    let contextMenuItem = null;
+    
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const world = screenToWorld(mouseX, mouseY);
+      
+      const item = getItemAtPosition(world.x, world.y);
+      
+      if (item && item.type === 'product') {
+        contextMenuItem = item;
+        // If clicking on an item that's already in the multi-selection, keep the selection
+        if (!selectedItems.includes(item)) {
+          // If not in multi-selection, make this the only selected item
+          selectedItem = item;
+          selectedItems = [];
+        }
+        showContextMenu(e.clientX, e.clientY);
+        draw();
+      } else {
+        hideContextMenu();
+      }
+    });
+    
+    function showContextMenu(x, y) {
+      const menu = document.getElementById('contextMenu');
+      const count = selectedItems.length > 0 ? selectedItems.length : 1;
+      const isMultiple = count > 1;
+      
+      // Update menu text based on selection count
+      document.getElementById('contextMenuCartText').textContent = 
+        isMultiple ? `Add ${count} Samples to Cart` : 'Add Sample to Cart';
+      document.getElementById('contextMenuFlipText').textContent = 
+        isMultiple ? `Flip ${count} Cards` : 'Flip Card';
+      document.getElementById('contextMenuDeleteText').textContent = 
+        isMultiple ? `Delete ${count} Items` : 'Delete';
+      
+      menu.classList.add('active');
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+    }
+    
+    function hideContextMenu() {
+      const menu = document.getElementById('contextMenu');
+      menu.classList.remove('active');
+      contextMenuItem = null;
+    }
+    
+    function addSampleToCart() {
+      const itemsToAdd = selectedItems.length > 0 ? selectedItems : [contextMenuItem];
+      
+      if (itemsToAdd.length > 0) {
+        const productList = itemsToAdd.map(p => `${p.title} - ${p.brand} - ${p.color}`).join('\n');
+        alert(`${itemsToAdd.length} sample${itemsToAdd.length > 1 ? 's' : ''} added to cart:\n\n${productList}`);
+        console.log('Added to cart:', itemsToAdd);
+      }
+      hideContextMenu();
+    }
+    
+    function flipSelectedProduct() {
+      const itemsToFlip = selectedItems.length > 0 ? selectedItems : [contextMenuItem];
+      
+      itemsToFlip.forEach(item => {
+        if (item && item.type === 'product') {
+          item.flipped = !item.flipped;
+        }
+      });
+      
+      draw();
+      hideContextMenu();
+    }
+    
+    // Close context menu when clicking elsewhere
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.context-menu')) {
+        hideContextMenu();
+      }
+    });
+    
     function expandProjectThumbnail(thumbnail) {
       const projectItems = items.filter(item => 
         item.projectId === thumbnail.projectId && item.type === 'product'
       );
+      
+      // Update sidebar active states
+      const projectsTitle = document.getElementById('projectsSectionTitle');
+      const palettesTitle = document.getElementById('palettesSectionTitle');
+      if (projectsTitle) projectsTitle.classList.remove('active');
+      if (palettesTitle) palettesTitle.classList.add('active');
       
       // Clear canvas - remove all items except products that belong to other projects
       for (let i = items.length - 1; i >= 0; i--) {
@@ -992,6 +1346,11 @@
       
       updateProjectsList();
       draw();
+      
+      // Update list view if active
+      if (currentView === 'list') {
+        renderListView();
+      }
     }
     
     canvas.addEventListener('mousedown', (e) => {
@@ -1001,8 +1360,6 @@
       const world = screenToWorld(mouseX, mouseY);
       
       if (currentTool === 'select') {
-        // Resize disabled
-        /*
         // Check if clicking on a resize handle first
         if (selectedItem && selectedItem.type === 'product') {
           const handle = getResizeHandle(selectedItem, world.x, world.y);
@@ -1016,27 +1373,47 @@
             return;
           }
         }
-        */
         
         const item = getItemAtPosition(world.x, world.y);
         
         if (item) {
-          selectedItem = item;
-          // Start potential drag to sidebar
-          draggedCanvasItem = item;
-          dragStartX = e.clientX;
-          dragStartY = e.clientY;
+          // Handle shift-click for multi-selection
+          if (e.shiftKey && item.type === 'product') {
+            if (selectedItems.includes(item)) {
+              // Remove from selection
+              selectedItems = selectedItems.filter(i => i !== item);
+              if (selectedItem === item) {
+                selectedItem = selectedItems.length > 0 ? selectedItems[0] : null;
+              }
+            } else {
+              // Add to selection
+              selectedItems.push(item);
+              selectedItem = item;
+            }
+          } else {
+            // Clear multi-selection if not shift-clicking
+            selectedItems = [];
+            selectedItem = item;
+            // For products, enable dragging on canvas
+            if (item.type === 'product') {
+              draggedItem = item;
+              dragOffsetX = world.x - item.x;
+              dragOffsetY = world.y - item.y;
+            }
+            // Also start potential drag to sidebar
+            draggedCanvasItem = item;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+          }
           
           // Move to front
           items.splice(items.indexOf(item), 1);
           items.push(item);
         } else {
           selectedItem = null;
+          selectedItems = [];
           draggedCanvasItem = null;
-          // Pan disabled
-          // isDragging = true;
-          // dragStartX = mouseX;
-          // dragStartY = mouseY;
+          draggedItem = null;
         }
       } else {
         // Check if clicking on existing text item when text tool is selected
@@ -1065,31 +1442,20 @@
       const mouseY = e.clientY - rect.top;
       const world = screenToWorld(mouseX, mouseY);
       
-      // Check if we should start dragging to sidebar
-      if (draggedCanvasItem && !isDraggingToSidebar) {
+      // Check if we should start dragging to sidebar (only if not already canvas dragging)
+      if (draggedCanvasItem && !isDraggingToSidebar && !isResizing && draggedItem) {
         const distance = Math.sqrt(
           Math.pow(e.clientX - dragStartX, 2) + 
           Math.pow(e.clientY - dragStartY, 2)
         );
-        if (distance > 5) {
+        // Only start sidebar drag if moving towards the sidebar (left side)
+        if (distance > 5 && e.clientX < 300) {
           isDraggingToSidebar = true;
+          draggedItem = null; // Stop canvas dragging
           createDragPreview(e, draggedCanvasItem);
         }
       }
       
-      // Pan disabled
-      /*
-      if (isDragging) {
-        const dx = mouseX - dragStartX;
-        const dy = mouseY - dragStartY;
-        viewportX += dx;
-        viewportY += dy;
-        dragStartX = mouseX;
-        dragStartY = mouseY;
-        draw();
-      } else */
-      // Resize disabled
-      /*
       if (isResizing && selectedItem) {
         const dx = world.x - resizeStartX;
         const dy = world.y - resizeStartY;
@@ -1126,18 +1492,12 @@
         }
         
         draw();
-      } else */
-      // Canvas dragging disabled for products
-      /*
-      if (draggedItem) {
+      } else if (draggedItem && !isDraggingToSidebar) {
         draggedItem.x = world.x - dragOffsetX;
         draggedItem.y = world.y - dragOffsetY;
         draw();
       } else {
-      */
         // Update cursor based on hover
-        // Resize disabled
-        /*
         if (selectedItem && selectedItem.type === 'product') {
           const handle = getResizeHandle(selectedItem, world.x, world.y);
           if (handle) {
@@ -1145,10 +1505,9 @@
             return;
           }
         }
-        */
         const item = getItemAtPosition(world.x, world.y);
         canvas.style.cursor = item ? 'pointer' : 'default';
-      // }
+      }
     });
 
     canvas.addEventListener('mouseup', () => {
@@ -1347,15 +1706,25 @@
 
     // Delete selected item function
     function deleteSelectedItem() {
-      if (selectedItem) {
+      if (selectedItems.length > 0) {
+        // Delete all selected items
+        selectedItems.forEach(item => {
+          const index = items.indexOf(item);
+          if (index > -1) {
+            items.splice(index, 1);
+          }
+        });
+        selectedItems = [];
+        selectedItem = null;
+      } else if (selectedItem) {
         const index = items.indexOf(selectedItem);
         if (index > -1) {
           items.splice(index, 1);
           selectedItem = null;
-          updateProjectsList();
-          draw();
         }
       }
+      updateProjectsList();
+      draw();
     }
 
     // Keyboard shortcuts
@@ -1375,19 +1744,7 @@
       let newItem;
       
       if (type === 'product') {
-        const randomImage = productImages[Math.floor(Math.random() * productImages.length)];
-        const fileName = randomImage.split('/').pop();
-        const parts = fileName.replace('_detail.jpg', '').split('_');
-        
-        // Extract brand, title, and color from filename
-        // Format: BRAND_Title_ColorCode_detail.jpg
-        const brandCode = parts[0];
-        const productName = parts[1] || 'Product';
-        const colorCode = parts[2] || '';
-        
-        const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                     brandCode === 'MHRM' ? 'Maharam' : 
-                     'Maharam';
+        const randomProduct = productsData[Math.floor(Math.random() * productsData.length)];
         
         newItem = {
           type: 'product',
@@ -1395,13 +1752,13 @@
           y: y - 125,
           width: 250,
           height: 250,
-          imagePath: randomImage,
-          title: productName,
-          brand: brand,
-          color: colorCode,
-          productCategory: 'Upholstery',
-          content: 'Textile',
-          price: '$85.00 / yd',
+          imagePath: randomProduct.imagePath,
+          title: randomProduct.title,
+          brand: randomProduct.brand,
+          color: randomProduct.colorCode,
+          productCategory: randomProduct.productCategory,
+          content: randomProduct.content,
+          price: randomProduct.price,
           flipped: false,
           id: generateId()
         };

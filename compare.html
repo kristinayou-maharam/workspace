@@ -6,6 +6,10 @@
   <title>Compare - Infinite Canvas Board</title>
   <link rel="stylesheet" href="src/styles.css">
   <style>
+    body {
+      background: #ffffff;
+    }
+
     .compare-container {
       position: fixed;
       left: 0;
@@ -21,16 +25,16 @@
       display: flex;
       height: 100vh;
       min-width: 100%;
-      padding: 80px 40px 40px 40px;
-      gap: 20px;
+      padding: 20px 40px 40px 40px;
+      gap: 0;
     }
 
     .compare-column {
-      min-width: 350px;
-      max-width: 350px;
-      height: calc(100vh - 120px);
-      background: #f8f8f8;
-      border-radius: 8px;
+      min-width: 300px;
+      max-width: 300px;
+      height: calc(100vh - 60px);
+      background: #ffffff;
+      border-right: 1px solid #e8e8e8;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -38,7 +42,7 @@
     }
 
     .compare-column-header {
-      padding: 20px;
+      padding: 20px 20px 16px 20px;
       background: white;
       border-bottom: 1px solid #e8e8e8;
       position: sticky;
@@ -47,19 +51,21 @@
     }
 
     .compare-column-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 400;
+      color: #000;
+      margin-bottom: 4px;
+      font-family: "MaharamNeue-Regular", sans-serif;
     }
 
     .compare-column-subtitle {
-      font-size: 12px;
-      color: #999;
+      font-size: 11px;
+      color: #666;
+      font-weight: 300;
     }
 
     .compare-column-content {
-      padding: 20px;
+      padding: 0;
       flex: 1;
     }
 
@@ -67,30 +73,34 @@
       width: 100%;
       aspect-ratio: 1;
       object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      background: white;
+      border-radius: 0;
+      margin-bottom: 0;
+      background: #f9f9f9;
     }
 
     .compare-product-info {
       background: white;
       padding: 20px;
-      border-radius: 4px;
-      margin-bottom: 12px;
+      border-radius: 0;
+      margin-bottom: 0;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .compare-info-label {
-      font-size: 11px;
+      font-size: 10px;
       color: #999;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-weight: 400;
     }
 
     .compare-info-value {
-      font-size: 14px;
-      color: #333;
-      margin-bottom: 16px;
+      font-size: 13px;
+      color: #000;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      font-weight: 300;
     }
 
     .compare-info-value:last-child {
@@ -98,12 +108,12 @@
     }
 
     .compare-add-column {
-      min-width: 350px;
-      max-width: 350px;
-      height: calc(100vh - 120px);
-      background: #f8f8f8;
-      border: 2px dashed #d0d0d0;
-      border-radius: 8px;
+      min-width: 300px;
+      max-width: 300px;
+      height: calc(100vh - 60px);
+      background: #fafafa;
+      border: 1px solid #e8e8e8;
+      border-radius: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -112,8 +122,7 @@
     }
 
     .compare-add-column:hover {
-      border-color: #007aff;
-      background: #f0f7ff;
+      background: #f5f5f5;
     }
 
     .compare-add-content {
@@ -122,37 +131,172 @@
     }
 
     .compare-add-icon {
-      font-size: 48px;
+      font-size: 32px;
       margin-bottom: 12px;
+      color: #ccc;
     }
 
     .compare-add-text {
-      font-size: 14px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 400;
     }
 
     .compare-remove-btn {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: white;
-      border: 1px solid #e8e8e8;
+      top: 20px;
+      right: 20px;
+      width: 24px;
+      height: 24px;
+      border-radius: 0;
+      background: transparent;
+      border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 14px;
       color: #999;
       transition: all 0.2s;
       z-index: 11;
     }
 
     .compare-remove-btn:hover {
-      background: #ff3b30;
-      border-color: #ff3b30;
-      color: white;
+      color: #000;
+    }
+
+    /* Product Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      width: 50vw;
+      max-width: none;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-size: 24px;
+      font-family: "MaharamNeue-Medium", sans-serif;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px 10px;
+      color: #666;
+    }
+    .modal-close:hover {
+      color: #000;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 10px;
+      transition: all 0.2s;
+    }
+    .product-card:hover {
+      border-color: #007aff;
+      background: #f5f5f5;
+    }
+    .product-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .product-card-title {
+      font-size: 14px;
+      font-family: "MaharamNeue-Medium", sans-serif;
+      margin-bottom: 4px;
+    }
+    .product-card-info {
+      font-size: 12px;
+      color: #666;
+    }
+    .modal-filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .filter-label {
+      font-size: 12px;
+      font-family: "MaharamNeue-Medium", sans-serif;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-family: "MaharamNeue-Regular", sans-serif;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+      min-width: 150px;
+    }
+    .filter-select:focus {
+      outline: none;
+      border-color: #007aff;
+    }
+    .modal-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .search-input {
+      flex: 2;
+      padding: 10px 15px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-family: "MaharamNeue-Regular", sans-serif;
+      font-size: 14px;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #007aff;
     }
   </style>
 </head>
@@ -217,54 +361,60 @@
     <button class="control-btn" id="deleteItem" title="Delete selected item">🗑️</button>
   </div>
 
-
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Select a Product</div>
+        <button class="modal-close" onclick="closeProductModal()">✕</button>
+      </div>
+      <div class="modal-search">
+        <input type="search" class="search-input" id="productSearch" placeholder="Search products..." oninput="applyFilters()">
+      </div>
+      <div class="modal-filters">
+        <div class="filter-group">
+          <label class="filter-label">Brand</label>
+          <select class="filter-select" id="filterBrand" onchange="applyFilters()">
+            <option value="all">All Brands</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Category</label>
+          <select class="filter-select" id="filterCategory" onchange="applyFilters()">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Color</label>
+          <select class="filter-select" id="filterColor" onchange="applyFilters()">
+            <option value="all">All Colors</option>
+          </select>
+        </div>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+  </div>
 
   <script>
-    // Product images available
-    const productImages = [
-      'img/details/KT_Beacon_901925-005_detail.jpg',
-      'img/details/KT_Cozy_Cord_466938-002_detail.jpg',
-      'img/details/KT_Delite_466730-018_detail.jpg',
-      'img/details/KT_Facet_466804-012_detail.jpg',
-      'img/details/KT_Infinite_466734-019_detail.jpg',
-      'img/details/KT_Ponder_901936-002_detail.jpg',
-      'img/details/KT_Vast_466945-009_detail.jpg',
-      'img/details/KT_Villa_901900-005_detail.jpg',
-      'img/details/KT_Wrap_Up_901937-003_detail.jpg',
-      'img/details/MHRM_Cadence_466667-019_detail.jpg',
-      'img/details/MHRM_Connect_466638-009_detail.jpg',
-      'img/details/Maharam_Metaphor_466553_010_detail.jpg',
-      'img/details/Maharam_Method_466579_021_detail.jpg',
-      'img/details/Maharam_Muse_466487_026_detail.jpg',
-      'img/details/Maharam_Transmit_901895_013_detail.jpg'
-    ];
+    // Product data (will be loaded from JSON)
+    let productsData = [];
+    let allProductsData = [];
+
+    // Load product data from JSON
+    async function loadProductData() {
+      try {
+        const response = await fetch('data/products.json');
+        productsData = await response.json();
+        console.log('Loaded', productsData.length, 'products');
+        initializeSampleColumns();
+      } catch (error) {
+        console.error('Error loading product data:', error);
+      }
+    }
 
     let compareColumns = [];
 
     function generateId() {
       return Date.now() + Math.random().toString(36).substr(2, 9);
-    }
-
-    function parseProductInfo(imagePath) {
-      const fileName = imagePath.split('/').pop();
-      const parts = fileName.replace('_detail.jpg', '').split('_');
-      const brandCode = parts[0];
-      const productName = parts[1] || 'Product';
-      const colorCode = parts[2] || '';
-      const brand = brandCode === 'KT' ? 'Knoll Textiles' : 
-                   brandCode === 'MHRM' ? 'Maharam' : 
-                   'Maharam';
-      
-      return {
-        imagePath,
-        title: productName,
-        brand,
-        color: colorCode,
-        productCategory: 'Upholstery',
-        content: 'Textile',
-        price: '$85.00 / yd',
-        id: generateId()
-      };
     }
 
     function createColumn(product) {
@@ -291,7 +441,7 @@
         
         <div class="compare-product-info">
           <div class="compare-info-label">Color</div>
-          <div class="compare-info-value">${product.color}</div>
+          <div class="compare-info-value">${product.colorCode}</div>
           
           <div class="compare-info-label">Category</div>
           <div class="compare-info-value">${product.productCategory}</div>
@@ -325,10 +475,7 @@
     }
 
     function addColumn_click() {
-      const randomImage = productImages[Math.floor(Math.random() * productImages.length)];
-      const product = parseProductInfo(randomImage);
-      compareColumns.push(product);
-      renderColumns();
+      openProductModal();
     }
 
     function removeColumn(id) {
@@ -391,14 +538,149 @@
       alert('Project functionality not available on Compare page');
     }
 
-    // Initialize with 3 sample columns
-    for (let i = 0; i < 3; i++) {
-      const randomImage = productImages[i];
-      const product = parseProductInfo(randomImage);
-      compareColumns.push(product);
+    // Initialize with 3 sample columns after loading data
+    function initializeSampleColumns() {
+      if (productsData.length === 0) return;
+      
+      for (let i = 0; i < 3 && i < productsData.length; i++) {
+        compareColumns.push(productsData[i]);
+      }
+      renderColumns();
     }
 
-    renderColumns();
+    // Product Modal functionality
+    function openProductModal() {
+      const modal = document.getElementById('productModal');
+      
+      // Build product data array
+      allProductsData = productsData.map(product => ({
+        imagePath: product.imagePath,
+        productName: product.title,
+        brand: product.brand,
+        colorCode: product.colorCode,
+        category: product.productCategory
+      }));
+      
+      // Populate filter dropdowns
+      populateFilters();
+      
+      // Display all products
+      renderProducts(allProductsData);
+      
+      modal.classList.add('active');
+    }
+    
+    function populateFilters() {
+      // Get unique values
+      const brands = [...new Set(allProductsData.map(p => p.brand))].sort();
+      const categories = [...new Set(allProductsData.map(p => p.category))].sort();
+      const colors = [...new Set(allProductsData.map(p => p.colorCode))].filter(c => c).sort();
+      
+      // Populate brand filter
+      const brandSelect = document.getElementById('filterBrand');
+      brandSelect.innerHTML = '<option value="all">All Brands</option>';
+      brands.forEach(brand => {
+        const option = document.createElement('option');
+        option.value = brand;
+        option.textContent = brand;
+        brandSelect.appendChild(option);
+      });
+      
+      // Populate category filter
+      const categorySelect = document.getElementById('filterCategory');
+      categorySelect.innerHTML = '<option value="all">All Categories</option>';
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+      });
+      
+      // Populate color filter
+      const colorSelect = document.getElementById('filterColor');
+      colorSelect.innerHTML = '<option value="all">All Colors</option>';
+      colors.forEach(color => {
+        const option = document.createElement('option');
+        option.value = color;
+        option.textContent = color;
+        colorSelect.appendChild(option);
+      });
+    }
+    
+    function applyFilters() {
+      const brandFilter = document.getElementById('filterBrand').value;
+      const categoryFilter = document.getElementById('filterCategory').value;
+      const colorFilter = document.getElementById('filterColor').value;
+      const searchQuery = document.getElementById('productSearch').value.toLowerCase();
+      
+      let filtered = allProductsData;
+      
+      if (brandFilter !== 'all') {
+        filtered = filtered.filter(p => p.brand === brandFilter);
+      }
+      
+      if (categoryFilter !== 'all') {
+        filtered = filtered.filter(p => p.category === categoryFilter);
+      }
+      
+      if (colorFilter !== 'all') {
+        filtered = filtered.filter(p => p.colorCode === colorFilter);
+      }
+      
+      if (searchQuery) {
+        filtered = filtered.filter(p => 
+          p.productName.toLowerCase().includes(searchQuery) ||
+          p.brand.toLowerCase().includes(searchQuery) ||
+          p.colorCode.toLowerCase().includes(searchQuery)
+        );
+      }
+      
+      renderProducts(filtered);
+    }
+    
+    function renderProducts(products) {
+      const productGrid = document.getElementById('productGrid');
+      productGrid.innerHTML = '';
+      
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.onclick = () => selectProduct(product.imagePath);
+        
+        card.innerHTML = `
+          <img src="${product.imagePath}" alt="${product.productName}">
+          <div class="product-card-title">${product.productName}</div>
+          <div class="product-card-info">${product.brand} - ${product.colorCode}</div>
+        `;
+        
+        productGrid.appendChild(card);
+      });
+    }
+    
+    function closeProductModal() {
+      const modal = document.getElementById('productModal');
+      modal.classList.remove('active');
+    }
+    
+    function selectProduct(imagePath) {
+      closeProductModal();
+      
+      const productData = productsData.find(p => p.imagePath === imagePath);
+      if (!productData) return;
+      
+      compareColumns.push(productData);
+      renderColumns();
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('productModal').addEventListener('click', (e) => {
+      if (e.target.id === 'productModal') {
+        closeProductModal();
+      }
+    });
+
+    // Load product data and initialize
+    loadProductData();
   </script>
 </body>
 </html>
